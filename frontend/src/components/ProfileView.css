@@ -1,0 +1,122 @@
+.profile-container {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 2rem;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 2rem;
+}
+
+.user-avatar {
+  width: 80px;
+  height: 80px;
+  background: var(--primary);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.user-info h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.user-info p {
+  color: var(--text-light);
+}
+
+.profile-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.menu-section h4 {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  color: var(--text-light);
+  letter-spacing: 1px;
+  margin-bottom: 0.75rem;
+  padding-left: 0.5rem;
+}
+
+.menu-item {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  transition: all 0.2s;
+}
+
+.menu-item:hover {
+  border-color: var(--primary);
+  transform: translateX(4px);
+}
+
+.menu-item-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  text-align: left;
+}
+
+.menu-item-content span {
+  font-weight: 600;
+  display: block;
+}
+
+.menu-item-content p {
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
+
+.menu-icon {
+  color: var(--primary);
+}
+
+.btn-logout {
+  width: 100%;
+  padding: 1rem;
+  background: #fef2f2;
+  color: var(--error);
+  border-radius: var(--radius);
+  border: 1px solid #fee2e2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  cursor: pointer;
+}
+
+.btn-logout:hover {
+  background: #fee2e2;
+}
+
+.profile-placeholder {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--text-light);
+}
+
+.placeholder-icon {
+  margin-bottom: 1.5rem;
+  opacity: 0.2;
+}
