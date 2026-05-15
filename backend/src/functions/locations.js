@@ -1,10 +1,11 @@
 const { app } = require('@azure/functions');
-const { poolPromise, sql } = require('../utils/db');
+const { poolPromise, sql } = require('../../utils/db');
 
 // GET /cities
 app.http('getCities', {
     methods: ['GET'],
     authLevel: 'anonymous',
+    route: 'cities',
     handler: async (request, context) => {
         try {
             const pool = await poolPromise;
@@ -12,6 +13,7 @@ app.http('getCities', {
             
             return {
                 status: 200,
+                headers: { 'Access-Control-Allow-Origin': '*' },
                 jsonBody: result.recordset
             };
         } catch (err) {
@@ -37,6 +39,7 @@ app.http('getStoresByCity', {
             
             return {
                 status: 200,
+                headers: { 'Access-Control-Allow-Origin': '*' },
                 jsonBody: result.recordset
             };
         } catch (err) {

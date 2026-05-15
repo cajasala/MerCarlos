@@ -1,10 +1,11 @@
 const { app } = require('@azure/functions');
-const { poolPromise, sql } = require('../utils/db');
+const { poolPromise, sql } = require('../../utils/db');
 
 // GET /categories
 app.http('getCategories', {
     methods: ['GET'],
     authLevel: 'anonymous',
+    route: 'categories',
     handler: async (request, context) => {
         try {
             const pool = await poolPromise;

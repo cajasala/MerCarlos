@@ -1,6 +1,6 @@
 const { app } = require('@azure/functions');
-const { poolPromise, sql } = require('../utils/db');
-const { authenticate } = require('../utils/auth');
+const { poolPromise, sql } = require('../../utils/db');
+const { authenticate } = require('../../utils/auth');
 
 // GET /lists
 app.http('getLists', {

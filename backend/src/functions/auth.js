@@ -1,7 +1,7 @@
 const { app } = require('@azure/functions');
-const { poolPromise, sql } = require('../utils/db');
-const { sendSMS, generateOTP } = require('../utils/sms');
-const { generateToken } = require('../utils/auth');
+const { poolPromise, sql } = require('../../utils/db');
+const { sendSMS, generateOTP } = require('../../utils/sms');
+const { generateToken } = require('../../utils/auth');
 
 // POST /auth/request-otp
 app.http('requestOTP', {

@@ -2,7 +2,7 @@ import React from 'react';
 import { Search, ShoppingCart, User, MapPin, Menu } from 'lucide-react';
 import './Navigation.css';
 
-const Navigation = ({ selectedStore, onOpenStoreSelector, onSearch, cartCount, onOpenCart }) => {
+const Navigation = ({ selectedStore, onOpenStoreSelector, onSearch, cartCount, onOpenCart, onOpenAuth }) => {
   const [searchTerm, setSearchTerm] = React.useState('');
 
   const handleSearchChange = (e) => {

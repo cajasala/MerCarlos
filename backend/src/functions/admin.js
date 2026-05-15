@@ -1,14 +1,14 @@
 const { app } = require('@azure/functions');
-const { poolPromise, sql } = require('../utils/db');
-const { generateToken } = require('../utils/auth');
+const { poolPromise, sql } = require('../../utils/db');
+const { generateToken } = require('../../utils/auth');
 const csv = require('csv-parser');
 const { Readable } = require('stream');
 
 // POST /admin/login
-app.http('adminLogin', {
+app.http('mngLogin', {
     methods: ['POST'],
     authLevel: 'anonymous',
-    route: 'admin/login',
+    route: 'mng/login',
     handler: async (request, context) => {
         try {
             const { username, password } = await request.json();
@@ -41,10 +41,10 @@ app.http('adminLogin', {
 });
 
 // POST /admin/upload-csv
-app.http('uploadCSV', {
+app.http('mngUploadCSV', {
     methods: ['POST'],
     authLevel: 'anonymous',
-    route: 'admin/upload-csv',
+    route: 'mng/upload-csv',
     handler: async (request, context) => {
         try {
             // Check auth (simplified for demo)
