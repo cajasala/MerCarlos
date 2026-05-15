@@ -2,6 +2,14 @@
 
 MerCarlos es una plataforma de comercio electrónico multi-tienda diseñada para supermercados, cumpliendo con las regulaciones colombianas de exhibición de precios por unidad de medida.
 
+## Documentación Detallada
+
+- [🏗️ Arquitectura del Sistema](docs/architecture.md)
+- [🔌 Referencia de API](docs/api.md)
+- [💻 Guía del Frontend](docs/frontend.md)
+- [⚙️ Guía de Administración](docs/admin.md)
+- [🚀 Configuración y Despliegue](docs/setup.md)
+
 ## Tecnologías
 
 - **Frontend**: React (Vite) + Vanilla CSS + Lucide Icons.
