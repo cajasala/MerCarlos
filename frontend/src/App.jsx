@@ -12,6 +12,7 @@ import ListsView from './components/ListsView';
 import OrdersView from './components/OrdersView';
 import AdminDashboard from './components/AdminDashboard';
 import AdminLogin from './components/AdminLogin';
+import Footer from './components/Footer';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:7071/api';
@@ -23,6 +24,7 @@ function App() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedSubCategory, setSelectedSubCategory] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [cartItems, setCartItems] = useState([]);
@@ -80,20 +82,22 @@ function App() {
     if (savedStore) {
       const store = JSON.parse(savedStore);
       setSelectedStore(store);
-      fetchProducts(store.TiendaID, null, '');
+      fetchProducts(store.TiendaID, null, '', true);
     } else {
       setIsFirstVisit(true);
       setIsStoreSelectorOpen(true);
     }
   }, []);
 
-  const fetchProducts = async (storeId, categoryId = null, search = '') => {
+  const fetchProducts = async (storeId, categoryId = null, search = '', isPromotion = null, subCategoryId = null) => {
     setLoading(true);
     try {
       let url = `${API_URL}/products/${storeId}`;
       const params = new URLSearchParams();
       if (categoryId) params.append('categoryId', categoryId);
       if (search) params.append('search', search);
+      if (isPromotion !== null) params.append('isPromotion', isPromotion);
+      if (subCategoryId) params.append('subCategoryId', subCategoryId);
       
       const res = await axios.get(`${url}?${params.toString()}`);
       setProducts(res.data);
@@ -109,12 +113,19 @@ function App() {
     localStorage.setItem('selectedStore', JSON.stringify(store));
     setIsStoreSelectorOpen(false);
     setIsFirstVisit(false);
-    fetchProducts(store.TiendaID, selectedCategory, searchTerm);
+    setSelectedSubCategory(null);
+    fetchProducts(store.TiendaID, selectedCategory, searchTerm, null, null);
   };
 
   const handleCategorySelect = (categoryId) => {
     setSelectedCategory(categoryId);
-    fetchProducts(selectedStore.TiendaID, categoryId, searchTerm);
+    setSelectedSubCategory(null);
+    fetchProducts(selectedStore.TiendaID, categoryId, '', null, null);
+  };
+
+  const handleSubCategorySelect = (subCategoryId) => {
+    setSelectedSubCategory(subCategoryId);
+    fetchProducts(selectedStore.TiendaID, selectedCategory, '', null, subCategoryId);
   };
 
   const [sortBy, setSortBy] = useState('none'); // none, price_asc, price_desc, unit_price_asc
@@ -123,7 +134,7 @@ function App() {
     setSearchTerm(value);
     if (currentView !== 'home') setCurrentView('home');
     // Debounce would be better, but for now simple
-    fetchProducts(selectedStore.TiendaID, selectedCategory, value);
+    fetchProducts(selectedStore.TiendaID, selectedCategory, value, null, null);
   };
 
   const addToCart = (product) => {
@@ -239,21 +250,11 @@ function App() {
           <div className="catalog-content">
             <CategoryBar 
               selectedCategory={selectedCategory} 
-              onSelectCategory={handleCategorySelect} 
+              onSelectCategory={handleCategorySelect}
+              selectedSubCategory={selectedSubCategory}
+              onSelectSubCategory={handleSubCategorySelect}
             />
             
-            {selectedStore.TelefonoWhatsApp && (
-              <a 
-                href={`https://wa.me/${selectedStore.TelefonoWhatsApp.replace(/\+/g, '')}?text=Hola,%20quisiera%20hacer%20una%20consulta%20a%20MerCarlos%20${selectedStore.Nombre}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="whatsapp-float"
-                title="Contactar por WhatsApp"
-              >
-                <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" />
-              </a>
-            )}
-
             <div className="catalog-header">
               <div className="catalog-title">
                 <h3>{selectedCategory ? 'Resultados' : 'Nuestros Productos'}</h3>
@@ -299,6 +300,8 @@ function App() {
           </div>
         )}
       </main>
+
+      <Footer selectedStore={selectedStore} />
 
       {selectedProductId && (
         <ProductDetail 

@@ -11,27 +11,32 @@ app.http('mngLogin', {
     route: 'mng/login',
     handler: async (request, context) => {
         try {
-            const { username, password } = await request.json();
-            
+            const chunks = [];
+            for await (const chunk of request.body) {
+                chunks.push(Buffer.from(chunk));
+            }
+            const body = JSON.parse(Buffer.concat(chunks).toString());
+            const { username, password } = body;
+
             const pool = await poolPromise;
             const result = await pool.request()
                 .input('username', sql.NVarChar, username)
-                .input('password', sql.NVarChar, password) // Note: Should be hashed in production
-                .query('SELECT * FROM Administrador WHERE Username = @username AND Password = @password');
+                .input('passwordHash', sql.NVarChar, password)
+                .query('SELECT * FROM Administrador WHERE Username = @username AND PasswordHash = @passwordHash');
 
             if (result.recordset.length === 0) {
                 return { status: 401, body: 'Invalid credentials' };
             }
 
             const admin = result.recordset[0];
-            const token = generateToken({ id: admin.AdminID, role: 'admin' });
+            const token = generateToken({ id: admin.AdminID, role: admin.RolID, negocioId: admin.NegocioID });
 
-            return { 
-                status: 200, 
-                jsonBody: { 
-                    token, 
-                    admin: { id: admin.AdminID, username: admin.Username } 
-                } 
+            return {
+                status: 200,
+                jsonBody: {
+                    token,
+                    admin: { id: admin.AdminID, username: admin.Username, role: admin.RolID, negocioId: admin.NegocioID }
+                }
             };
         } catch (err) {
             context.log(err);
@@ -47,7 +52,6 @@ app.http('mngUploadCSV', {
     route: 'mng/upload-csv',
     handler: async (request, context) => {
         try {
-            // Check auth (simplified for demo)
             const formData = await request.formData();
             const file = formData.get('file');
             const tiendaId = formData.get('tiendaId');
@@ -56,7 +60,7 @@ app.http('mngUploadCSV', {
 
             const buffer = Buffer.from(await file.arrayBuffer());
             const results = [];
-            
+
             const stream = Readable.from(buffer);
             await new Promise((resolve, reject) => {
                 stream.pipe(csv())
@@ -71,7 +75,6 @@ app.http('mngUploadCSV', {
 
             try {
                 for (const row of results) {
-                    // row expected format: SKU, PrecioRegular, PrecioPromocion, EsPromocion
                     await transaction.request()
                         .input('tiendaId', sql.Int, tiendaId)
                         .input('sku', sql.NVarChar, row.SKU)

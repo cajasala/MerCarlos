@@ -15,7 +15,9 @@ const AdminLogin = ({ onLoginSuccess }) => {
     setLoading(true);
     setError('');
     try {
-      const res = await axios.post(`${API_URL}/admin/login`, formData);
+      console.log('ddddd');
+      const res = await axios.post(`${API_URL}/mng/login`, formData);
+      console.log('Login response:', res.data);
       onLoginSuccess(res.data);
     } catch (err) {
       setError('Credenciales de administrador inválidas.');
@@ -38,28 +40,28 @@ const AdminLogin = ({ onLoginSuccess }) => {
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="input-group">
             <User size={20} className="input-icon" />
-            <input 
-              name="username" 
-              placeholder="Usuario" 
-              onChange={(e) => setFormData({...formData, username: e.target.value})}
-              required 
+            <input
+              name="username"
+              placeholder="Usuario"
+              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+              required
             />
           </div>
           <div className="input-group">
             <Lock size={20} className="input-icon" />
-            <input 
-              name="password" 
-              type="password" 
-              placeholder="Contraseña" 
-              onChange={(e) => setFormData({...formData, password: e.target.value})}
-              required 
+            <input
+              name="password"
+              type="password"
+              placeholder="Contraseña"
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              required
             />
           </div>
           <button className="btn btn-secondary btn-full" disabled={loading}>
             {loading ? 'Validando...' : 'Entrar al Panel'}
           </button>
         </form>
-        
+
         <button className="btn-link" onClick={() => window.location.href = '/'}>
           Volver a la tienda
         </button>

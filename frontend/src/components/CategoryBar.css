@@ -32,6 +32,35 @@
   color: var(--primary);
 }
 
+.subcategory-list {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.subcategory-item {
+  white-space: nowrap;
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-light);
+  font-weight: 400;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.subcategory-item:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.subcategory-item.active {
+  background: var(--primary-light);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
 .category-item.active {
   background: var(--primary);
   color: white;
