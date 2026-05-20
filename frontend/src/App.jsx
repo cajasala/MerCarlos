@@ -12,6 +12,9 @@ import ListsView from './components/ListsView';
 import OrdersView from './components/OrdersView';
 import AdminDashboard from './components/AdminDashboard';
 import AdminLogin from './components/AdminLogin';
+import AdminOrdersView from './components/AdminOrdersView';
+import AdminProductImages from './components/AdminProductImages';
+import AdminProductUpload from './components/AdminProductUpload';
 import Footer from './components/Footer';
 import axios from 'axios';
 
@@ -33,6 +36,7 @@ function App() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [currentView, setCurrentView] = useState('home'); // home, profile, lists, orders, admin
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  const [adminActiveView, setAdminActiveView] = useState('prices'); // prices, orders, bulkProducts, productImages
 
   useEffect(() => {
     const adminToken = localStorage.getItem('adminToken');
@@ -209,7 +213,17 @@ function App() {
         {!isAdminLoggedIn ? (
           <AdminLogin onLoginSuccess={handleAdminLogin} />
         ) : (
-          <AdminDashboard onLogout={handleAdminLogout} />
+            <AdminDashboard activeView={adminActiveView} onViewChange={setAdminActiveView} onLogout={handleAdminLogout}>
+            {adminActiveView === 'prices' && (
+              <div className="card upload-container">
+                <p>Vista de Carga Masiva de Precios — submódulo de Carga Masiva de Precios</p>
+                <p className="text-muted">Utiliza el formulario para subir tu CSV de precios.</p>
+              </div>
+            )}
+            {adminActiveView === 'bulkProducts' && <AdminProductUpload />}
+            {adminActiveView === 'orders' && <AdminOrdersView />}
+            {adminActiveView === 'productImages' && <AdminProductImages productId={null} />}
+          </AdminDashboard>
         )}
       </div>
     );

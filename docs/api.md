@@ -84,12 +84,12 @@ Realiza el checkout y crea un nuevo pedido.
 
 ## Administración
 
-### `POST /admin/login`
+### `POST /api/admin/login`
 Autenticación para usuarios administradores.
 - **Cuerpo**: `{ "username": "admin", "password": "password" }`
 - **Respuesta**: `{ "token": "JWT_TOKEN", "admin": { ... } }`
 
-### `POST /admin/upload-csv`
+### `POST /api/admin/upload-csv`
 Carga masiva de precios y promociones mediante un archivo CSV.
 - **Headers**: `Content-Type: multipart/form-data`
 - **Campos**:

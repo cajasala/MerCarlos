@@ -1,10 +1,44 @@
+const jwt = require('jsonwebtoken');
 const { app } = require('@azure/functions');
 const { poolPromise, sql } = require('../../utils/db');
 const { generateToken } = require('../../utils/auth');
+const { comparePassword } = require('../../utils/password');
 const csv = require('csv-parser');
 const { Readable } = require('stream');
 
-// POST /admin/login
+// ──────────────────────────────────────────────
+// adminGate  —  RBAC helper
+// app.http handlers call   adminGate(request, ['ADM','PED'])
+// Returns: { ok: true, adminId, negocioId, role }
+//          { ok: false, status, body }
+// ──────────────────────────────────────────────
+async function adminGate(request, allowedRoles = []) {
+    const rawAuth = request.headers?.get('authorization');
+    if (!rawAuth) return { status: 401, body: 'Unauthorized' };
+
+    const token = rawAuth.startsWith('Bearer ')
+        ? rawAuth.slice(7)
+        : rawAuth;
+
+    let decoded;
+    try {
+        decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch {
+        return { status: 401, body: 'Invalid token' };
+    }
+
+    if (typeof decoded.role === 'number') {
+        return { status: 401, body: 'Session expired — please log in again' };
+    }
+    if (allowedRoles.length > 0 && !allowedRoles.includes(decoded.role)) {
+        return { status: 403, body: 'Forbidden — insufficient role' };
+    }
+    return { ok: true, adminId: decoded.id, negocioId: decoded.negocioId, role: decoded.role };
+}
+
+// ──────────────────────────────────────────────
+// POST /mng/login
+// ──────────────────────────────────────────────
 app.http('mngLogin', {
     methods: ['POST'],
     authLevel: 'anonymous',
@@ -18,17 +52,28 @@ app.http('mngLogin', {
             const body = JSON.parse(Buffer.concat(chunks).toString());
             const { username, password } = body;
 
+            if (!username || !password) {
+                return { status: 400, body: 'Username and password required' };
+            }
+
             const pool = await poolPromise;
+
+            // Return hash for bcrypt comparison (no identity check)
             const result = await pool.request()
                 .input('username', sql.NVarChar, username)
-                .input('passwordHash', sql.NVarChar, password)
-                .query('SELECT * FROM Administrador WHERE Username = @username AND PasswordHash = @passwordHash');
+                .query('SELECT AdminID, Username, RolID, NegocioID, PasswordHash FROM Administrador WHERE Username = @username');
 
             if (result.recordset.length === 0) {
                 return { status: 401, body: 'Invalid credentials' };
             }
 
             const admin = result.recordset[0];
+            const passwordMatch = await comparePassword(password, admin.PasswordHash);
+
+            if (!passwordMatch) {
+                return { status: 401, body: 'Invalid credentials' };
+            }
+
             const token = generateToken({ id: admin.AdminID, role: admin.RolID, negocioId: admin.NegocioID });
 
             return {
@@ -45,12 +90,18 @@ app.http('mngLogin', {
     }
 });
 
-// POST /admin/upload-csv
+// ──────────────────────────────────────────────
+// POST /mng/upload-csv   — Carga Masiva de Precios
+// Auth: ADM, PED, EDI
+// ──────────────────────────────────────────────
 app.http('mngUploadCSV', {
     methods: ['POST'],
     authLevel: 'anonymous',
     route: 'mng/upload-csv',
     handler: async (request, context) => {
+        const gate = await adminGate(request, ['ADM', 'PED', 'EDI']);
+        if (!gate.ok) return { status: gate.status, body: gate.body };
+
         try {
             const formData = await request.formData();
             const file = formData.get('file');

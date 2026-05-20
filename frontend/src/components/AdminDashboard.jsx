@@ -1,126 +1,81 @@
-import React, { useState } from 'react';
+import React from 'react';
 import axios from 'axios';
-import { LayoutGrid, Upload, Database, FileText, CheckCircle, AlertCircle, LogOut } from 'lucide-react';
+import { LayoutGrid, Database, Upload, FileText, Image, LogOut } from 'lucide-react';
 import './AdminDashboard.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:7071/api';
 
-const AdminDashboard = ({ onLogout }) => {
-  const [file, setFile] = useState(null);
-  const [tiendaId, setTiendaId] = useState('');
-  const [status, setStatus] = useState({ type: '', message: '' });
-  const [loading, setLoading] = useState(false);
-
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
-    setStatus({ type: '', message: '' });
-  };
-
-  const handleUpload = async (e) => {
-    e.preventDefault();
-    if (!file || !tiendaId) {
-      setStatus({ type: 'error', message: 'Por favor selecciona un archivo y una tienda.' });
-      return;
-    }
-
-    setLoading(true);
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('tiendaId', tiendaId);
-
+/** Decode role from JWT stored in localStorage */
+function getAdminRole() {
+    const token = localStorage.getItem('adminToken');
+    if (!token) return null;
     try {
-      const token = localStorage.getItem('adminToken');
-      const res = await axios.post(`${API_URL}/admin/upload-csv`, formData, {
-        headers: { 
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      setStatus({ type: 'success', message: res.data.message });
-      setFile(null);
-    } catch (err) {
-      setStatus({ type: 'error', message: 'Error al procesar el archivo CSV.' });
-    } finally {
-      setLoading(false);
-    }
-  };
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.role || null; // 'ADM' | 'PED' | 'EDI'
+    } catch { return null; }
+}
 
-  return (
-    <div className="admin-layout animate-fade-in">
-      <aside className="admin-sidebar">
-        <div className="sidebar-header">
-          <LayoutGrid size={24} className="text-secondary" />
-          <h2>MerCarlos Admin</h2>
-        </div>
-        <nav className="admin-nav">
-          <button className="nav-item active"><Database size={20} /> Carga Masiva</button>
-          <button className="nav-item"><FileText size={20} /> Pedidos</button>
-        </nav>
-        <button className="admin-logout" onClick={onLogout}>
-          <LogOut size={20} /> Cerrar Sesión
-        </button>
-      </aside>
+const ROLE_PERMISSIONS = {
+    ADM: ['prices', 'orders', 'bulk-products', 'product-images'],
+    PED: ['prices', 'orders', 'bulk-products'],
+    EDI: ['prices', 'bulk-products', 'product-images'],
+};
 
-      <main className="admin-main">
-        <header className="admin-topbar">
-          <h1>Carga Masiva de Precios</h1>
-          <p>Actualiza los precios de una tienda subiendo un archivo CSV.</p>
-        </header>
+const NAV_ITEMS = [
+    { id: 'prices',     label: 'Carga Masiva',     icon: Database,  roles: ['ADM', 'PED', 'EDI'] },
+    { id: 'bulk-products', label: 'Carga Masiva\nMaestro', icon: Upload,  roles: ['ADM', 'PED', 'EDI'] },
+    { id: 'orders',     label: 'Pedidos',           icon: FileText,  roles: ['ADM', 'PED']       },
+    { id: 'product-images', label: 'Imágenes\nProductos', icon: Image,  roles: ['ADM', 'EDI']       },
+];
 
-        <section className="admin-section">
-          <div className="upload-container card">
-            <form onSubmit={handleUpload}>
-              <div className="admin-input-group">
-                <label>ID de la Tienda</label>
-                <input 
-                  type="number" 
-                  placeholder="Ej: 1" 
-                  value={tiendaId}
-                  onChange={(e) => setTiendaId(e.target.value)}
-                  required
-                />
-              </div>
+const VIEW_TITLES = {
+    prices:     { title: 'Carga Masiva de Precios',     desc: 'Actualiza los precios de una tienda subiendo un archivo CSV.' },
+    bulkProducts: { title: 'Carga Masiva — Maestro de Productos', desc: 'Carga nuevos productos o actualiza existentes desde un archivo CSV.' },
+    orders:     { title: 'Gestión de Pedidos',            desc: 'Consulta y actualiza el estado de los pedidos.' },
+    'product-images': { title: 'Imágenes de Productos', desc: 'Sube y gestiona las fotos de catálogo de tus productos.' },
+};
 
-              <div className={`drop-zone ${file ? 'has-file' : ''}`}>
-                <input type="file" accept=".csv" onChange={handleFileChange} id="csv-upload" hidden />
-                <label htmlFor="csv-upload" className="drop-zone-content">
-                  <Upload size={48} className="upload-icon" />
-                  {file ? (
-                    <div className="file-info">
-                      <strong>{file.name}</strong>
-                      <span>{(file.size / 1024).toFixed(2)} KB</span>
-                    </div>
-                  ) : (
-                    <div className="upload-text">
-                      <strong>Selecciona un archivo CSV</strong>
-                      <span>o arrastra y suelta aquí</span>
-                    </div>
-                  )}
-                </label>
-              </div>
+const AdminDashboard = ({ activeView = 'prices', onViewChange, children, onLogout }) => {
+    const role = getAdminRole();
+    const allowed = role ? (ROLE_PERMISSIONS[role] || []) : [];
 
-              <div className="csv-template-info">
-                <h4>Formato requerido:</h4>
-                <code>SKU, PrecioRegular, PrecioPromocion, EsPromocion</code>
-                <p>Usa 1 para EsPromocion = verdadero, 0 para falso.</p>
-              </div>
-
-              {status.message && (
-                <div className={`status-alert ${status.type}`}>
-                  {status.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
-                  <span>{status.message}</span>
+    return (
+        <div className="admin-layout animate-fade-in">
+            <aside className="admin-sidebar">
+                <div className="sidebar-header">
+                    <LayoutGrid size={24} className="text-secondary" />
+                    <h2>MerCarlos Admin</h2>
                 </div>
-              )}
+                <nav className="admin-nav">
+                    {NAV_ITEMS.filter(item => allowed.includes(item.id)).map(item => (
+                        <button
+                            key={item.id}
+                            className={`nav-item ${activeView === item.id ? 'active' : ''}`}
+                            onClick={() => onViewChange(item.id)}
+                        >
+                            {React.createElement(item.icon, { size: 20 })}
+                            <span className="nav-label">{item.label}</span>
+                        </button>
+                    ))}
+                </nav>
+                <button className="admin-logout" onClick={onLogout}>
+                    <LogOut size={20} /> Cerrar Sesión
+                </button>
+            </aside>
 
-              <button className="btn btn-secondary btn-full" disabled={loading || !file}>
-                {loading ? 'Procesando...' : 'Iniciar Carga'}
-              </button>
-            </form>
-          </div>
-        </section>
-      </main>
-    </div>
-  );
+            <main className="admin-main">
+                {activeView && VIEW_TITLES[activeView] && (
+                    <header className="admin-topbar">
+                        <h1>{VIEW_TITLES[activeView].title}</h1>
+                        <p>{VIEW_TITLES[activeView].desc}</p>
+                    </header>
+                )}
+                <section className="admin-section">
+                    {children}
+                </section>
+            </main>
+        </div>
+    );
 };
 
 export default AdminDashboard;

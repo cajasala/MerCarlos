@@ -205,3 +205,35 @@
     margin-left: 0;
   }
 }
+
+/* Mobile nav bottom bar */
+@media (max-width: 768px) {
+  .admin-sidebar {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: auto;
+    height: auto;
+    width: 100%;
+    padding: 0.5rem;
+    flex-direction: row;
+    z-index: 100;
+  }
+  .nav-item.hide-mobile {
+    display: none;
+  }
+  .nav-label {
+    display: block;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 80px;
+  }
+  .admin-logout {
+    display: none;
+  }
+}
