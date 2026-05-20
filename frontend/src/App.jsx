@@ -15,6 +15,7 @@ import AdminLogin from './components/AdminLogin';
 import AdminOrdersView from './components/AdminOrdersView';
 import AdminProductImages from './components/AdminProductImages';
 import AdminProductUpload from './components/AdminProductUpload';
+import AdminPriceUpload from './components/AdminPriceUpload';
 import Footer from './components/Footer';
 import axios from 'axios';
 
@@ -214,12 +215,7 @@ function App() {
           <AdminLogin onLoginSuccess={handleAdminLogin} />
         ) : (
             <AdminDashboard activeView={adminActiveView} onViewChange={setAdminActiveView} onLogout={handleAdminLogout}>
-            {adminActiveView === 'prices' && (
-              <div className="card upload-container">
-                <p>Vista de Carga Masiva de Precios — submódulo de Carga Masiva de Precios</p>
-                <p className="text-muted">Utiliza el formulario para subir tu CSV de precios.</p>
-              </div>
-            )}
+            {adminActiveView === 'prices' && <AdminPriceUpload />}
             {adminActiveView === 'bulkProducts' && <AdminProductUpload />}
             {adminActiveView === 'orders' && <AdminOrdersView />}
             {adminActiveView === 'productImages' && <AdminProductImages productId={null} />}
