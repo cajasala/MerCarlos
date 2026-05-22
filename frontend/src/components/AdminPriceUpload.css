@@ -45,7 +45,7 @@
 }
 
 .drop-zone-content {
-  pointer-events: none;
+    /* pointer-events: none; */
 }
 
 .upload-icon {

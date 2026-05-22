@@ -11,83 +11,26 @@ const AdminPriceUpload = () => {
     const [status, setStatus] = useState({ type: '', msg: '' });
     const [loading, setLoading] = useState(false);
 
-    const handleFileChange = async (e) => {
-        const file = e.target.files[0];
-        setFile(file);
-        setStatus({ type: '', msg: '' });
-        
-        if (!file) {
-            return;
-        }
-        
-        // Validate CSV file
+    const handleFileChange = (e) => {
         try {
-            const text = await file.text();
-            const lines = text.trim().split('\n');
-            if (lines.length === 0) {
-                setStatus({ type: 'error', msg: 'El archivo CSV está vacío.' });
+            const file = e.target.files[0];
+            if (!file) {
+                setStatus({ type: '', msg: '' });
+                return;
+            }
+            
+            setFile(file);
+            
+            // Simple validation for now - just check if it's a CSV
+            if (!file.name.toLowerCase().endsWith('.csv')) {
+                setStatus({ type: 'error', msg: 'Por favor seleccione un archivo CSV' });
                 setFile(null);
                 return;
             }
             
-            const headers = lines[0].trim().split(',').map(h => h.trim());
-            const requiredColumns = ['SKU', 'PrecioRegular', 'PrecioPromocion', 'EsPromocion'];
-            const missingColumns = requiredColumns.filter(col => !headers.includes(col));
-            
-            if (missingColumns.length > 0) {
-                setStatus({ type: 'error', msg: `Columnas obligatorias faltantes: ${missingColumns.join(', ')}` });
-                setFile(null);
-                return;
-            }
-            
-            // Validate data types in rows (skip header)
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line) continue; // Skip empty lines
-                
-                const values = line.split(',').map(v => v.trim());
-                const rowData = {};
-                headers.forEach((header, index) => {
-                    rowData[header] = values[index] || '';
-                });
-                
-                // Validate SKU
-                if (!rowData.SKU || rowData.SKU.trim() === '') {
-                    setStatus({ type: 'error', msg: `Fila ${i + 1}: SKU no puede estar vacío` });
-                    setFile(null);
-                    return;
-                }
-                
-                // Validate PrecioRegular
-                if (!rowData.PrecioRegular || isNaN(parseFloat(rowData.PrecioRegular))) {
-                    setStatus({ type: 'error', msg: `Fila ${i + 1}: PrecioRegular debe ser un número válido` });
-                    setFile(null);
-                    return;
-                }
-                
-                // Validate PrecioPromocion
-                if (!rowData.PrecioPromocion && rowData.PrecioPromocion !== '0') {
-                    setStatus({ type: 'error', msg: `Fila ${i + 1}: PrecioPromocion es requerido y debe ser un número válido` });
-                    setFile(null);
-                    return;
-                }
-                if (rowData.PrecioPromocion !== '' && isNaN(parseFloat(rowData.PrecioPromocion))) {
-                    setStatus({ type: 'error', msg: `Fila ${i + 1}: PrecioPromocion debe ser un número válido` });
-                    setFile(null);
-                    return;
-                }
-                
-                // Validate EsPromocion
-                if (rowData.EsPromocion !== '0' && rowData.EsPromocion !== '1') {
-                    setStatus({ type: 'error', msg: `Fila ${i + 1}: EsPromocion debe ser 0 o 1` });
-                    setFile(null);
-                    return;
-                }
-            }
-            
-            setStatus({ type: 'success', msg: 'Archivo CSV válido - todas las columnas obligatorias presentes y tipos de datos correctos' });
+            setStatus({ type: 'success', msg: 'Archivo CSV seleccionado correctamente' });
         } catch (err) {
-            setStatus({ type: 'error', msg: 'Error al leer el archivo CSV' });
+            setStatus({ type: 'error', msg: 'Error al procesar el archivo' });
             setFile(null);
         }
     };
@@ -111,7 +54,7 @@ const AdminPriceUpload = () => {
 
         try {
             const token = localStorage.getItem('adminToken');
-            const res = await axios.post(`${API_URL}/api/admin/upload-prices-csv`, formData, {
+            const res = await axios.post(`${API_URL}/mng/upload-csv`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
             });
             const data = res.data;

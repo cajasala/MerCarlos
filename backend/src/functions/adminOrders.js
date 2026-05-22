@@ -121,11 +121,11 @@ app.http('listAdminOrders', {
 
         try {
             const pool = await poolPromise;
-            const statusFilter = request.url.searchParams.get('statusName');
+            const statusFilter = request.query.get('statusName');
 
             let query = `
                 SELECT o.OrdenID, o.ClienteID, o.TiendaID, o.Total, o.CreatedAt,
-                       o.StatusID, s.Nombre AS StatusNombre, t.Nombre AS TiendaNombre
+                        o.StatusID, s.Nombre AS StatusNombre, t.Nombre AS TiendaNombre
                 FROM Orden o
                 JOIN StatusOrden s ON o.StatusID = s.StatusID
                 JOIN Tienda t    ON o.TiendaID = t.TiendaID

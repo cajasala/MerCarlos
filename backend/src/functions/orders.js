@@ -43,8 +43,18 @@ app.http('createOrder', {
         try {
             const { tiendaId, items, total } = await request.json();
             const pool = await poolPromise;
+
+            // Resolve default status outside transaction (no locking needed)
+            const statusResult = await pool.request()
+                .input('nombre', sql.NVarChar, 'Recibido')
+                .query('SELECT StatusID FROM StatusOrden WHERE Nombre = @nombre');
+            const defaultStatusId = statusResult.recordset[0]?.StatusID;
+            if (!defaultStatusId) {
+                return { status: 500, body: 'Status "Recibido" no encontrado en StatusOrden. Ejecute las migraciones.' };
+            }
+
             const transaction = new sql.Transaction(pool);
-            
+
             await transaction.begin();
             try {
                 // 1. Create Order
@@ -52,7 +62,8 @@ app.http('createOrder', {
                     .input('clienteId', sql.Int, user.id)
                     .input('tiendaId', sql.Int, tiendaId)
                     .input('total', sql.Decimal(18, 2), total)
-                    .query('INSERT INTO Orden (ClienteID, TiendaID, Total, StatusID) OUTPUT INSERTED.OrdenID VALUES (@clienteId, @tiendaId, @total, 1)'); // 1: Recibido
+                    .input('statusId', sql.Int, defaultStatusId)
+                    .query('INSERT INTO Orden (ClienteID, TiendaID, Total, StatusID) OUTPUT INSERTED.OrdenID VALUES (@clienteId, @tiendaId, @total, @statusId)');
                 
                 const orderId = orderResult.recordset[0].OrdenID;
 
@@ -73,8 +84,8 @@ app.http('createOrder', {
                 throw err;
             }
         } catch (err) {
-            context.log(err);
-            return { status: 500, body: 'Internal Server Error' };
+            context.log('ORDER ERROR:', err.message);
+            return { status: 500, body: `Error al procesar pedido: ${err.message}` };
         }
     }
 });

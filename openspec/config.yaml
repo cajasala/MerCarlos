@@ -1,20 +1,50 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+# Project context — shown to AI when creating artifacts.
+# Every change must keep frontend, backend, and database coordinated.
+context: |
+  ## Stack tecnológico (3 capas)
+  - **Frontend**: React + Vite + React Router + Axios + Lucide icons.
+    Puerto dev: 5173. Proxy Vite: /mng/* → http://localhost:7071/api
+    Variables: VITE_API_URL (default http://localhost:7071/api), VITE_ENV
+  - **Backend**: Node.js + Azure Functions v4 + mssql 12.5 + JWT + bcrypt + csv-parser.
+    Puerto local dev: 7071. Estructura: src/functions/<feature>.js
+    Variables: DB_SERVER, DB_DATABASE, DB_USER, DB_PASSWORD, JWT_SECRET, SMS_API_KEY
+  - **Database**: Azure SQL / SQL Server. Scripts en /database/
+    Conexión: utils/db.js (mssql, poolPromise). Sin ORM — queries nativas.
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+  ## Arquitectura general
+  - Multi-tenant por Ciudad/Tienda. Frontend guarda tienda seleccionada en localStorage.
+  - Backend expone endpoints REST agrupados por funcionalidad en /src/functions/.
+  - Estrategia: admin, auth, catalog, orders, locations, lists.
+  - Auth: OTP por SMS → JWT token. RBAC: ADM / PED / EDI.
+
+  ## Coordinación entre capas
+  - Todo cambio que toque una capa DEBE listar impacto en las otras 2.
+  - Si se agrega/modifica un endpoint: especificar qué tabla(s) DB toca y qué componente Frontend lo consume.
+  - Si se agrega/modifica una tabla: especificar qué endpoint(s) Backend la expone y qué componente Frontend la consume.
+  - Si se agrega/modifica un componente Frontend: especificar qué endpoint(s) Backend llama y qué tabla(s) DB lee.
+
+  ## Convenciones
+  - Backend: CommonJS, camelCase en JS, snake_case en columnas DB.
+  - Frontend: ES Modules, PascalCase componentes, camelCase estado.
+  - DB: snake_case tablas/columnas. Migraciones numeradas 00X_descripcion.sql.
+  - Commits: conventional commits (feat:, fix:, chore:, etc.)
+  - Dominio: e-commerce de telecomunicaciones (MerCarlos) — productos mayoristas por ciudad/tienda.
+
+  # Per-artifact rules — reglas específicas por tipo de artefacto
+  rules:
+    proposal:
+      - Debe mencionar los 3 componentes (frontend, backend, database) y cómo se coordinan
+      - Listar explícitamente endpoints DB-tables y frontend-components afectados
+      - Incluir "Non-goals"
+    design:
+      - Incluir diagrama ASCII de flujo datos cuando el cambio toque >1 capa
+      - Mencionar riesgos por capa (qué pasa si frontend o backend o DB fallan individualmente)
+      - Si introduce nuevos secrets/variables, especificar en qué .env van
+    specs:
+      - Cada spec debe tener sección "Coordination" con tabla: Cambio | Capa | Afecta |
+      - Cada spec debe listar qué endpoints y tablas intervienen
+    tasks:
+      - Cada tarea debe indicar qué capa toca: [FE], [BE], [DB], [FE+BE], [BE+DB], [FE+BE+DB]
+      - Agrupar tareas por capa, no mezclar sin marcar
