@@ -164,7 +164,7 @@ app.http('getAdminOrderDetail', {
                 .input('orderId', sql.Int, orderId)
                 .input('negocioId', sql.Int, auth.negocioId)
                 .query(`
-                    SELECT o.OrdenID, o.ClienteID, o.TiendaID, o.Total, o.FechaOrden, o.CreatedAt,
+                    SELECT o.OrdenID, o.ClienteID, o.TiendaID, o.Total, o.CreatedAt,
                            c.Nombre, c.Apellido, c.Telefono, c.Email,
                            s.Nombre AS StatusNombre,
                            t.Nombre AS TiendaNombre, t.TelefonoWhatsApp,
@@ -189,7 +189,7 @@ app.http('getAdminOrderDetail', {
                 ClienteID: row.ClienteID,
                 TiendaID: row.TiendaID,
                 Total: row.Total,
-                FechaOrden: row.FechaOrden,
+                FechaOrden: row.CreatedAt,
                 CreatedAt: row.CreatedAt,
                 StatusNombre: row.StatusNombre,
                 TiendaNombre: row.TiendaNombre,
