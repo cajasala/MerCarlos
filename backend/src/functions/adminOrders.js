@@ -144,3 +144,79 @@ app.http('listAdminOrders', {
         }
     }
 });
+
+// ╔═══════════════════════════════════════════════════════════╗
+// ║  GET /api/admin/orders/{orderId}  —  Full order detail    ║
+// ║  Roles: ADM, PED                                          ║
+// ╚═══════════════════════════════════════════════════════════╝
+app.http('getAdminOrderDetail', {
+    methods: ['GET'],
+    authLevel: 'anonymous',
+    route: 'api/admin/orders/{orderId}',
+    handler: async (request, context) => {
+        const { orderId } = request.params;
+        const auth = await requireAdmin(request, ['ADM', 'PED']);
+        if (!auth.authorized) return { status: auth.status, body: auth.body };
+
+        try {
+            const pool = await poolPromise;
+            const result = await pool.request()
+                .input('orderId', sql.Int, orderId)
+                .input('negocioId', sql.Int, auth.negocioId)
+                .query(`
+                    SELECT o.OrdenID, o.ClienteID, o.TiendaID, o.Total, o.FechaOrden, o.CreatedAt,
+                           c.Nombre, c.Apellido, c.Telefono, c.Email,
+                           s.Nombre AS StatusNombre,
+                           t.Nombre AS TiendaNombre, t.TelefonoWhatsApp,
+                           d.DetalleID, d.ProductoID, d.Cantidad, d.PrecioUnitario,
+                           pm.Nombre AS ProductoNombre, pm.UnidadMedidaBase, pm.CantidadUnidadBase
+                    FROM Orden o
+                    JOIN Cliente c  ON o.ClienteID = c.ClienteID
+                    JOIN Tienda t   ON o.TiendaID = t.TiendaID
+                    JOIN StatusOrden s ON o.StatusID = s.StatusID
+                    LEFT JOIN DetalleOrden d ON d.OrdenID = o.OrdenID
+                    LEFT JOIN ProductoMaestro pm ON d.ProductoID = pm.ProductoID
+                    WHERE o.OrdenID = @orderId AND t.NegocioID = @negocioId
+                `);
+
+            if (result.recordset.length === 0) {
+                return { status: 404, body: 'Order not found' };
+            }
+
+            const row = result.recordset[0];
+            const orderData = {
+                OrdenID: row.OrdenID,
+                ClienteID: row.ClienteID,
+                TiendaID: row.TiendaID,
+                Total: row.Total,
+                FechaOrden: row.FechaOrden,
+                CreatedAt: row.CreatedAt,
+                StatusNombre: row.StatusNombre,
+                TiendaNombre: row.TiendaNombre,
+                TelefonoWhatsApp: row.TelefonoWhatsApp,
+                Nombre: row.Nombre,
+                Apellido: row.Apellido,
+                Telefono: row.Telefono,
+                Email: row.Email,
+                items: []
+            };
+
+            result.recordset.forEach(r => {
+                if (r.DetalleID) {
+                    orderData.items.push({
+                        ProductoID: r.ProductoID,
+                        ProductoNombre: r.ProductoNombre,
+                        Cantidad: r.Cantidad,
+                        PrecioUnitario: r.PrecioUnitario,
+                        UnidadMedidaBase: r.UnidadMedidaBase
+                    });
+                }
+            });
+
+            return { status: 200, jsonBody: orderData };
+        } catch (err) {
+            context.log(err);
+            return { status: 500, body: 'Internal Server Error' };
+        }
+    }
+});
