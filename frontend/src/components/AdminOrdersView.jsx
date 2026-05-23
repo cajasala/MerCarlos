@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Package, Clock, CheckCircle, AlertCircle, ChevronDown, LogOut } from 'lucide-react';
+import { Package, Clock, CheckCircle, AlertCircle, ChevronDown, LogOut, ChevronRight } from 'lucide-react';
+import OrderDetailModal from './OrderDetailModal';
 import './AdminOrders.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:7071/api';
@@ -19,6 +20,7 @@ const AdminOrdersView = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [updatingId, setUpdatingId] = useState(null);
+    const [selectedOrderId, setSelectedOrderId] = useState(null);
 
     useEffect(() => { fetchOrders(); }, []);
 
@@ -87,7 +89,7 @@ const AdminOrdersView = () => {
                                         </span>
                                     </td>
                                     <td>
-                                        <div className="status-dropdown-wrapper">
+                                        <div className="status-dropdown-wrapper" style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
                                             <select
                                                 className="status-select"
                                                 value={order.StatusNombre}
@@ -98,6 +100,13 @@ const AdminOrdersView = () => {
                                                     <option key={s} value={s}>{s}</option>
                                                 ))}
                                             </select>
+                                            <button 
+                                                className="btn btn-secondary" 
+                                                onClick={() => setSelectedOrderId(order.OrdenID)}
+                                                style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', fontSize: '0.85rem' }}
+                                            >
+                                                Ver Detalle <ChevronRight size={14} />
+                                            </button>
                                             {updatingId === order.OrdenID && (
                                                 <span className="spinner-tiny">⟳</span>
                                             )}
@@ -109,6 +118,12 @@ const AdminOrdersView = () => {
                     </tbody>
                 </table>
             </div>
+            {selectedOrderId && (
+                <OrderDetailModal 
+                    orderId={selectedOrderId} 
+                    onClose={() => setSelectedOrderId(null)} 
+                />
+            )}
         </div>
     );
 };
