@@ -16,23 +16,23 @@ function getAdminRole() {
 }
 
 const ROLE_PERMISSIONS = {
-    ADM: ['prices', 'orders', 'bulk-products', 'product-images'],
-    PED: ['prices', 'orders', 'bulk-products'],
-    EDI: ['prices', 'bulk-products', 'product-images'],
+    ADM: ['prices', 'orders', 'bulkProducts', 'productImages'],
+    PED: ['prices', 'orders', 'bulkProducts'],
+    EDI: ['prices', 'bulkProducts', 'productImages'],
 };
 
 const NAV_ITEMS = [
     { id: 'prices',     label: 'Carga Masiva',     icon: Database,  roles: ['ADM', 'PED', 'EDI'] },
-    { id: 'bulk-products', label: 'Carga Masiva\nMaestro', icon: Upload,  roles: ['ADM', 'PED', 'EDI'] },
+    { id: 'bulkProducts', label: 'Carga Masiva\nMaestro', icon: Upload,  roles: ['ADM', 'PED', 'EDI'] },
     { id: 'orders',     label: 'Pedidos',           icon: FileText,  roles: ['ADM', 'PED']       },
-    { id: 'product-images', label: 'Imágenes\nProductos', icon: Image,  roles: ['ADM', 'EDI']       },
+    { id: 'productImages', label: 'Imágenes\nProductos', icon: Image,  roles: ['ADM', 'EDI']       },
 ];
 
 const VIEW_TITLES = {
     prices:     { title: 'Carga Masiva de Precios',     desc: 'Actualiza los precios de una tienda subiendo un archivo CSV.' },
     bulkProducts: { title: 'Carga Masiva — Maestro de Productos', desc: 'Carga nuevos productos o actualiza existentes desde un archivo CSV.' },
     orders:     { title: 'Gestión de Pedidos',            desc: 'Consulta y actualiza el estado de los pedidos.' },
-    'product-images': { title: 'Imágenes de Productos', desc: 'Sube y gestiona las fotos de catálogo de tus productos.' },
+    productImages: { title: 'Imágenes de Productos', desc: 'Sube y gestiona las fotos de catálogo de tus productos.' },
 };
 
 const AdminDashboard = ({ activeView = 'prices', onViewChange, children, onLogout }) => {
