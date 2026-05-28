@@ -74,11 +74,7 @@ const AdminProductUpload = () => {
                     <div className="col-grid">
                         <div className="col-required">
                             <strong>Obligatorias:</strong>
-                            <code>SKU, Nombre, UnidadMedidaBase, CantidadUnidadBase, CategoriaID</code>
-                        </div>
-                        <div className="col-optional">
-                            <strong>Opcionales:</strong>
-                            <code>Descripcion, SubCategoriaID</code>
+                            <code>SKU, Nombre, Descripcion, UnidadMedidaBase, CantidadUnidadBase, LocalCategoriaID, LocalSubCategoriaID</code>
                         </div>
                     </div>
                 </div>

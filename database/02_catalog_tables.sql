@@ -4,6 +4,9 @@ CREATE TABLE Categoria (
     CategoriaID INT PRIMARY KEY IDENTITY(1,1),
     Nombre NVARCHAR(100) NOT NULL,
     NegocioID INT NOT NULL,
+    -- LocalCategoriaID: source-system code from the business's ERP/legacy system (added by migration 003)
+    -- Used for bulk product upload; unique per NegocioID (NULL allowed for existing rows)
+    LocalCategoriaID VARCHAR(100) NULL,
     FOREIGN KEY (NegocioID) REFERENCES Negocio(NegocioID)
 );
 
@@ -11,6 +14,9 @@ CREATE TABLE SubCategoria (
     SubCategoriaID INT PRIMARY KEY IDENTITY(1,1),
     Nombre NVARCHAR(100) NOT NULL,
     CategoriaID INT NOT NULL,
+    -- LocalSubCategoriaID: source-system code from the business's ERP/legacy system (added by migration 003)
+    -- Used for bulk product upload; unique per CategoriaID (NULL allowed for existing rows)
+    LocalSubCategoriaID VARCHAR(100) NULL,
     FOREIGN KEY (CategoriaID) REFERENCES Categoria(CategoriaID)
 );
 

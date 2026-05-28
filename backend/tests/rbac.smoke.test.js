@@ -220,7 +220,7 @@ describe('RBAC - Role Enforcing', () => {
 
     // ─── 10.5 Bulk Product Upload partial success ─────────────────────────────
     it('bulk product upload returns per-row errors on partial failure', async () => {
-        const badCSV = 'SKU,Nombre,UnidadMedidaBase,CantidadUnidadBase,CategoriaID\nBAD-999,Test Fail,unidad,1,999999\nSKU-001,Good,unidad,1,1';
+        const badCSV = 'SKU,Nombre,Descripcion,UnidadMedidaBase,CantidadUnidadBase,LocalCategoriaID,LocalSubCategoriaID\nBAD-999,Test Fail,Desc Fail,unidad,1,LOCAL-CAT-999,LOCAL-SUB-999\nSKU-001,Good,Desc Good,unidad,1,LOCAL-CAT-001,LOCAL-SUB-001';
 
         const res = await fetch(`${API}/api/admin/upload-products-csv`, {
             method: 'POST',
