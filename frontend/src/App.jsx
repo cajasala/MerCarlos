@@ -49,20 +49,55 @@ function App() {
     const savedUser = localStorage.getItem('user');
     if (savedUser) setUser(JSON.parse(savedUser));
     
+    const token = localStorage.getItem('token');
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    }
+    
     const savedCart = localStorage.getItem('cart');
     if (savedCart) setCartItems(JSON.parse(savedCart));
+
+    // Global Axios 401 interceptor
+    const interceptor = axios.interceptors.response.use(
+      response => response,
+      error => {
+        if (error.response && error.response.status === 401) {
+          setUser(null);
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          delete axios.defaults.headers.common['Authorization'];
+          setIsAuthOpen(true);
+        }
+        return Promise.reject(error);
+      }
+    );
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
   }, []);
 
   const handleLoginSuccess = (data) => {
     setUser(data.user);
     localStorage.setItem('user', JSON.stringify(data.user));
     localStorage.setItem('token', data.token);
+    axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
+
+    const savedStore = localStorage.getItem('selectedStore');
+    if (savedStore) {
+      const store = JSON.parse(savedStore);
+      setSelectedStore(store);
+      fetchProducts(store.TiendaID, null, '', true);
+    } else {
+      setIsFirstVisit(true);
+      setIsStoreSelectorOpen(true);
+    }
   };
 
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
+    delete axios.defaults.headers.common['Authorization'];
     setCurrentView('home');
   };
 
@@ -83,14 +118,19 @@ function App() {
   }, [cartItems]);
 
   useEffect(() => {
-    const savedStore = localStorage.getItem('selectedStore');
-    if (savedStore) {
-      const store = JSON.parse(savedStore);
-      setSelectedStore(store);
-      fetchProducts(store.TiendaID, null, '', true);
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setIsAuthOpen(true);
     } else {
-      setIsFirstVisit(true);
-      setIsStoreSelectorOpen(true);
+      const savedStore = localStorage.getItem('selectedStore');
+      if (savedStore) {
+        const store = JSON.parse(savedStore);
+        setSelectedStore(store);
+        fetchProducts(store.TiendaID, null, '', true);
+      } else {
+        setIsFirstVisit(true);
+        setIsStoreSelectorOpen(true);
+      }
     }
   }, []);
 
@@ -335,6 +375,7 @@ function App() {
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
         onLoginSuccess={handleLoginSuccess}
+        mandatory={!user}
       />
 
       <StoreSelector 

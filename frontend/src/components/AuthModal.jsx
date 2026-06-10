@@ -5,7 +5,7 @@ import './AuthModal.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:7071/api';
 
-const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
+const AuthModal = ({ isOpen, onClose, onLoginSuccess, mandatory = false }) => {
   const [step, setStep] = useState(1); // 1: Phone, 2: OTP/Details
   const [formData, setFormData] = useState({
     telefono: '',
@@ -58,7 +58,9 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
       <div className="modal-content auth-content animate-fade-in">
         <div className="auth-header">
           <h2>{step === 1 ? 'Bienvenido' : 'Verifica tu cuenta'}</h2>
-          <button className="close-btn" onClick={onClose}><X size={24} /></button>
+          {!mandatory && (
+            <button className="close-btn" onClick={onClose}><X size={24} /></button>
+          )}
         </div>
 
         <div className="auth-body">

@@ -18,18 +18,23 @@ const AdminProductImages = ({ productId }) => {
         if (selectedProductId) fetchImages();
     }, [selectedProductId]);
 
-    const fetchImages = async () => {
-        const token = localStorage.getItem('adminToken');
-        try {
-            const res = await axios.get(
-                 `${API_URL}/api/admin/products/${selectedProductId}/images`,
-                 { headers: { Authorization: `Bearer ${token}` } }
-             );
-            setImages(res.data || []);
-        } catch (err) {
-            console.error('Error fetching images', err);
-        }
-    };
+     const fetchImages = async () => {
+         const token = localStorage.getItem('adminToken');
+         try {
+             const res = await axios.get(
+                  `${API_URL}/api/admin/products/${selectedProductId}/images`,
+                  { headers: { Authorization: `Bearer ${token}` } }
+              );
+             setImages(res.data || []);
+         } catch (err) {
+             console.error('Error fetching images:', err);
+             if (err.response?.status === 401) {
+                 alert('Tu sesión ha expirado o el token es inválido. Por favor cierra sesión y vuelve a entrar.');
+             } else {
+                 alert('Error al cargar las imágenes.');
+             }
+         }
+     };
 
     const handleUpload = async (e) => {
         e.preventDefault();
@@ -52,9 +57,18 @@ const AdminProductImages = ({ productId }) => {
             setFile(null);
             setIsCover(false);
             fetchImages();
-        } catch (err) {
-            setMessage({ type: 'error', text: err.response?.data || 'Error al subir la imagen.' });
-        } finally { setUploading(false); }
+         } catch (err) {
+             console.error('Error uploading image:', err);
+             let errorMessage = 'Error al subir la imagen.';
+             if (err.response) {
+                 errorMessage = err.response.data || err.response.statusText || errorMessage;
+             } else if (err.request) {
+                 errorMessage = 'No se recibió respuesta del servidor.';
+             } else {
+                 errorMessage = err.message;
+             }
+             setMessage({ type: 'error', text: errorMessage });
+         } finally { setUploading(false); }
     };
 
     const handleDelete = async (imagenId) => {

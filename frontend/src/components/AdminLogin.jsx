@@ -19,11 +19,16 @@ const AdminLogin = ({ onLoginSuccess }) => {
       const res = await axios.post(`${API_URL}/mng/login`, formData);
       console.log('Login response:', res.data);
       onLoginSuccess(res.data);
-    } catch (err) {
-      setError('Credenciales de administrador inválidas.');
-    } finally {
-      setLoading(false);
-    }
+     } catch (err) {
+       console.log(err);
+       if (err.response && err.response.status === 401) {
+         setError('Credenciales de administrador inválidas.');
+       } else {
+         setError('Error al intentar iniciar sesión. Por favor, intente de nuevo.');
+       }
+     } finally {
+       setLoading(false);
+     }
   };
 
   return (

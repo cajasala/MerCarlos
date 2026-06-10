@@ -1,5 +1,6 @@
 const { app } = require('@azure/functions');
 const { poolPromise, sql } = require('../../utils/db');
+const { authenticate } = require('../../utils/auth');
 
 // GET /cities
 app.http('getCities', {
@@ -7,6 +8,9 @@ app.http('getCities', {
     authLevel: 'anonymous',
     route: 'cities',
     handler: async (request, context) => {
+        const user = authenticate(request);
+        if (!user) return { status: 401, body: 'Unauthorized' };
+
         try {
             const pool = await poolPromise;
             const result = await pool.request().query('SELECT CiudadID, Nombre FROM Ciudad');
@@ -29,6 +33,9 @@ app.http('getStoresByCity', {
     authLevel: 'anonymous',
     route: 'stores/{cityId}',
     handler: async (request, context) => {
+        const user = authenticate(request);
+        if (!user) return { status: 401, body: 'Unauthorized' };
+
         const cityId = request.params.cityId;
         
         try {
@@ -48,3 +55,4 @@ app.http('getStoresByCity', {
         }
     }
 });
+
