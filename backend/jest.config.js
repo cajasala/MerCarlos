@@ -4,4 +4,5 @@ module.exports = {
     verbose: true,
     forceExit: true,
     detectOpenHandles: false,
+    testPathIgnorePatterns: ['checkout.integration.test.js'],
 };

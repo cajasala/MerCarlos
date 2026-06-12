@@ -9,6 +9,7 @@ const AdminPriceUpload = () => {
     const [file, setFile] = useState(null);
     const [tiendaId, setTiendaId] = useState('');
     const [status, setStatus] = useState({ type: '', msg: '' });
+    const [rowErrors, setRowErrors] = useState([]);
     const [loading, setLoading] = useState(false);
 
     const handleFileChange = (e) => {
@@ -58,13 +59,16 @@ const AdminPriceUpload = () => {
                 headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
             });
             const data = res.data;
+            const errors = Array.isArray(data.errors) ? data.errors : [];
+            setRowErrors(errors);
             setStatus({
-                type: data.errors > 0 ? 'warn' : 'success',
-                msg: `${data.upserted || 0} precios procesados. ${data.errors > 0 ? `${data.errors} filas con error.` : 'Sin errores.'}`,
+                type: errors.length > 0 ? 'warn' : 'success',
+                msg: `Insertados: ${data.inserted || 0}, Actualizados: ${data.updated || 0}. ${errors.length > 0 ? `${errors.length} fila(s) con error.` : 'Sin errores.'}`,
             });
             setFile(null);
         } catch (err) {
             const detail = err.response?.data || 'Error desconocido.';
+            setRowErrors([]);
             setStatus({ type: 'error', msg: typeof detail === 'string' ? detail : detail.body || 'Error al procesar el CSV.' });
         } finally { setLoading(false); }
     };
@@ -99,14 +103,33 @@ const AdminPriceUpload = () => {
                     <div className="col-grid">
                         <div className="col-required">
                             <strong>Columnas:</strong>
-                            <code>SKU, PrecioRegular, PrecioPromocion, EsPromocion</code>
+                            <code>SKU, PrecioRegular, PrecioPromocion, EsPromocion, Stock</code>
                         </div>
                     </div>
                 </div>
                 {status.msg && (
                     <div className={`status-alert ${status.type}`}>
-                        {status.type === 'success' ? <CheckCircle size={18} /> : status.type === 'warn' ? <AlertCircle size={18} /> : <AlertCircle size={18} />}
+                        {status.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
                         <span>{status.msg}</span>
+                    </div>
+                )}
+                {rowErrors.length > 0 && (
+                    <div className="csv-row-errors">
+                        <h4><AlertCircle size={16} /> Filas con error</h4>
+                        <table className="row-errors-table">
+                            <thead>
+                                <tr><th>Fila</th><th>SKU</th><th>Error</th></tr>
+                            </thead>
+                            <tbody>
+                                {rowErrors.map((e, i) => (
+                                    <tr key={i}>
+                                        <td>{e.row}</td>
+                                        <td>{e.sku}</td>
+                                        <td>{e.error}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 )}
                 <button className="btn btn-secondary btn-full" disabled={loading || !file}>

@@ -48,6 +48,8 @@ Despite what `openspec/config.yaml` says about snake_case, the actual schema is 
 
 Key relations: `ProductoMaestro` (catalog) + `ProductoTienda` (price/stock per store) is the pricing model. `Categoria` → `SubCategoria` → `ProductoMaestro.SubCategoriaID`. Order status transitions go through `StatusOrden` (seeded by `database/migrations/002_status_orden_seed_transicion.sql`).
 
+**Bulk upload ETL pattern** (`adminBulk.js` + migrations `004`/`005`): CSV → parse with `csv-parser` → bulk-insert rows into staging table `TmpUploadProductMaestro` (keyed by `SessionID`) → call `sp_BulkUploadProducts` which validates `LocalCategoriaID`/`LocalSubCategoriaID` against the calling `NegocioID`, then MERGEs into `ProductoMaestro`. The SP returns per-row validation errors and insert/update counts. Stale staging rows (>1 hour) are auto-purged by the SP. This is the only endpoint that uses a staging table + stored procedure instead of inline SQL.
+
 ### Frontend — React 19 + Vite
 - **No client-side router for views.** `App.jsx` is the single source of truth. View switching is `currentView` state (`home | profile | lists | orders | admin`). `react-router-dom` is in `package.json` but app navigation goes through state, not routes.
 - Admin mode is selected by query string (`?mode=admin`) on initial load — `App.jsx` reads it once in `useEffect` and sets `currentView`.

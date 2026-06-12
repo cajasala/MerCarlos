@@ -156,3 +156,39 @@
 .btn-full {
   width: 100%;
 }
+
+.csv-row-errors {
+  margin-top: 16px;
+}
+
+.csv-row-errors h4 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #e65100;
+  margin-bottom: 8px;
+}
+
+.row-errors-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.row-errors-table th,
+.row-errors-table td {
+  border: 1px solid #ffccbc;
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.row-errors-table th {
+  background: #fff3e0;
+  font-weight: 600;
+  color: #bf360c;
+}
+
+.row-errors-table tr:nth-child(even) td {
+  background: #fff8f5;
+}

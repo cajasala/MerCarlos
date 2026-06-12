@@ -17,7 +17,7 @@
 
 const assert = require('assert');
 const jwt = require('jsonwebtoken');
-const { poolPromise, sql } = require('./utils/db');
+const { poolPromise, sql } = require('../utils/db');
 
 const API = process.env.API_URL || 'http://localhost:7071/api';
 const secret = process.env.JWT_SECRET;
@@ -222,19 +222,15 @@ describe('RBAC - Role Enforcing', () => {
     it('bulk product upload returns per-row errors on partial failure', async () => {
         const badCSV = 'SKU,Nombre,Descripcion,UnidadMedidaBase,CantidadUnidadBase,LocalCategoriaID,LocalSubCategoriaID\nBAD-999,Test Fail,Desc Fail,unidad,1,LOCAL-CAT-999,LOCAL-SUB-999\nSKU-001,Good,Desc Good,unidad,1,LOCAL-CAT-001,LOCAL-SUB-001';
 
+        const fd = new FormData();
+        fd.append('file', new Blob([badCSV], { type: 'text/csv' }), 'bad.csv');
+
         const res = await fetch(`${API}/api/admin/upload-products-csv`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${ediToken}`,
-                'Content-Type': 'multipart/form-data'
+                'Authorization': `Bearer ${ediToken}`
             },
-            body: new FormData(
-                (() => {
-                    const fd = new FormData();
-                    fd.append('file', new Blob([badCSV], { type: 'text/csv' }), 'bad.csv');
-                    return fd;
-                })()
-            )
+            body: fd
         });
 
         const data = await res.json();

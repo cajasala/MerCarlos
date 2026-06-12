@@ -3,22 +3,27 @@ const { poolPromise, sql } = require('../../utils/db');
 const { requireAdmin } = require('../../utils/adminAuth');
 const csv = require('csv-parser');
 const { Readable } = require('stream');
+const crypto = require('crypto');
 
 // POST /api/admin/upload-products-csv
 // CSV columns req: SKU, Nombre, Descripcion, UnidadMedidaBase, CantidadUnidadBase, LocalCategoriaID, LocalSubCategoriaID
 // Roles: ADM, PED, EDI
 app.http('uploadProductsCSV', {
-     methods: ['POST'],
-     authLevel: 'anonymous',
-     route: 'api/admin/upload-products-csv',
+    methods: ['POST'],
+    authLevel: 'anonymous',
+    route: 'api/admin/upload-products-csv',
     handler: async (request, context) => {
         try {
+            context.log("Subida ......");
+            context.log(request);
             const auth = await requireAdmin(request, ['ADM', 'PED', 'EDI']);
+            context.log(auth);
             if (!auth.authorized) {
                 return { status: auth.status, body: auth.body };
             }
 
             const formData = await request.formData();
+            context.log(formData);
             const file = formData.get('file');
             if (!file) {
                 return { status: 400, body: 'File is required' };
@@ -46,102 +51,82 @@ app.http('uploadProductsCSV', {
                 }
             }
 
+            const sessionId = crypto.randomUUID();
             const pool = await poolPromise;
-            const errors = [];
-            const upserted = [];
             const transaction = new sql.Transaction(pool);
+            context.log("Va a iniciar transaccion");
             await transaction.begin();
 
             try {
+                context.log("Llegan " + rows.length + " records");
+
+                // 1. Definir la estructura de la tabla de staging
+                const stagingTable = new sql.Table('TmpUploadProductMaestro');
+                stagingTable.create = false;
+                stagingTable.columns.add('SessionID', sql.UniqueIdentifier, { nullable: false });
+                stagingTable.columns.add('RowIndex', sql.Int, { nullable: false });
+                stagingTable.columns.add('SKU', sql.NVarChar(50), { nullable: false });
+                stagingTable.columns.add('Nombre', sql.NVarChar(255), { nullable: false });
+                stagingTable.columns.add('Descripcion', sql.NVarChar(sql.MAX), { nullable: true });
+                stagingTable.columns.add('UnidadMedidaBase', sql.NVarChar(20), { nullable: false });
+                stagingTable.columns.add('CantidadUnidadBase', sql.Decimal(18, 2), { nullable: false });
+                stagingTable.columns.add('LocalCategoriaID', sql.VarChar(100), { nullable: false });
+                stagingTable.columns.add('LocalSubCategoriaID', sql.VarChar(100), { nullable: false });
+                stagingTable.columns.add('NegocioID', sql.Int, { nullable: false });
+
+                // 2. Poblar la tabla de staging
                 for (let i = 0; i < rows.length; i++) {
                     const row = rows[i];
-                    const rowNum = i + 1;
+                    const descVal = (row.Descripcion !== undefined && row.Descripcion !== null)
+                        ? String(row.Descripcion).trim()
+                        : null;
 
-                    try {
-                        // Resolve LocalCategoriaID → CategoriaID (scoped to the admin's negocio)
-                        const catLookup = await transaction.request()
-                            .input('localCatId', sql.VarChar(100), String(row.LocalCategoriaID).trim())
-                            .input('negocioId', sql.Int, auth.negocioId)
-                            .query('SELECT CategoriaID FROM Categoria WHERE LocalCategoriaID = @localCatId AND NegocioID = @negocioId');
-                        if (catLookup.recordset.length === 0) {
-                            errors.push({ row: rowNum, error: `LocalCategoriaID "${row.LocalCategoriaID}" not found for this negocio`, sku: row.SKU });
-                            continue;
-                        }
-                        const categoriaId = catLookup.recordset[0].CategoriaID;
-
-                        // Resolve LocalSubCategoriaID → SubCategoriaID (scoped to resolved CategoriaID)
-                        const subLookup = await transaction.request()
-                            .input('localSubId', sql.VarChar(100), String(row.LocalSubCategoriaID).trim())
-                            .input('catId', sql.Int, categoriaId)
-                            .query('SELECT SubCategoriaID FROM SubCategoria WHERE LocalSubCategoriaID = @localSubId AND CategoriaID = @catId');
-                        if (subLookup.recordset.length === 0) {
-                            errors.push({ row: rowNum, error: `LocalSubCategoriaID "${row.LocalSubCategoriaID}" not found under LocalCategoriaID "${row.LocalCategoriaID}"`, sku: row.SKU });
-                            continue;
-                        }
-                        const subCategoriaId = subLookup.recordset[0].SubCategoriaID;
-
-                        const sku = String(row.SKU).trim();
-                        const nombre = String(row.Nombre).trim();
-                        const descripcion = String(row.Descripcion).trim();
-                        const unidadMedidaBase = String(row.UnidadMedidaBase).trim();
-                        const cantidadUnidadBase = parseFloat(row.CantidadUnidadBase);
-
-                        // Upsert
-                        const existing = await transaction.request()
-                            .input('sku', sql.NVarChar, sku)
-                            .query('SELECT ProductoID FROM ProductoMaestro WHERE SKU = @sku');
-
-                        if (existing.recordset.length > 0) {
-                            await transaction.request()
-                                .input('nombre', sql.NVarChar, nombre)
-                                .input('desc', sql.NVarChar(4000), descripcion)
-                                .input('subId', sql.Int, subCategoriaId)
-                                .input('sku', sql.NVarChar, sku)
-                                .query(`
-                                    UPDATE ProductoMaestro
-                                    SET Nombre = @nombre,
-                                        Descripcion = @desc,
-                                        SubCategoriaID = @subId
-                                    WHERE SKU = @sku
-                                `);
-                            upserted.push({ row: rowNum, action: 'updated', sku });
-                        } else {
-                            const result = await transaction.request()
-                                .input('sku', sql.NVarChar, sku)
-                                .input('nombre', sql.NVarChar, nombre)
-                                .input('desc', sql.NVarChar(4000), descripcion)
-                                .input('subId', sql.Int, subCategoriaId)
-                                .input('um', sql.NVarChar, unidadMedidaBase)
-                                .input('cant', sql.Decimal(18, 2), cantidadUnidadBase)
-                                .input('negocioId', sql.Int, auth.negocioId)
-                                .query(`
-                                    INSERT INTO ProductoMaestro
-                                        (SKU, Nombre, Descripcion, SubCategoriaID, UnidadMedidaBase, CantidadUnidadBase, NegocioID)
-                                    OUTPUT INSERTED.ProductoID AS ProductoID
-                                    VALUES (@sku, @nombre, @desc, @subId, @um, @cant, @negocioId)
-                                `);
-                            upserted.push({ row: rowNum, action: 'inserted', sku, productoId: result.recordset[0].ProductoID });
-                        }
-                    } catch (rowErr) {
-                        errors.push({ row: rowNum, error: rowErr.message, sku: row.SKU });
-                    }
+                    stagingTable.rows.add(
+                        sessionId,
+                        i + 1,
+                        String(row.SKU).trim(),
+                        String(row.Nombre).trim(),
+                        descVal,
+                        String(row.UnidadMedidaBase).trim(),
+                        parseFloat(row.CantidadUnidadBase) || 0.0,
+                        String(row.LocalCategoriaID).trim(),
+                        String(row.LocalSubCategoriaID).trim(),
+                        auth.negocioId
+                    );
                 }
 
+                // 3. Ejecutar Bulk Copy en la tabla temporal
+                const requestBulk = new sql.Request(transaction);
+                await requestBulk.bulk(stagingTable);
+
+                // 4. Llamar al procedimiento almacenado
+                const spRequest = new sql.Request(transaction);
+                const spResult = await spRequest
+                    .input('SessionID', sql.UniqueIdentifier, sessionId)
+                    .input('NegocioID', sql.Int, auth.negocioId)
+                    .execute('sp_BulkUploadProducts');
+
                 await transaction.commit();
+
+                // 5. Mapear resultados
+                const rawErrors = spResult.recordsets[0] || [];
+                const counts = (spResult.recordsets[1] && spResult.recordsets[1][0]) || {};
+
+                const upsertedCount = (counts.InsertedCount || 0) + (counts.UpdatedCount || 0);
+
+                return {
+                    status: 200,
+                    jsonBody: {
+                        message: 'Bulk upload complete',
+                        upserted: upsertedCount,
+                        errors: rawErrors.length,
+                        details: rawErrors.length > 0 ? { errors: rawErrors } : undefined
+                    }
+                };
             } catch (txErr) {
                 await transaction.rollback();
                 throw txErr;
             }
-
-            return {
-                status: 200,
-                jsonBody: {
-                    message: 'Bulk upload complete',
-                    upserted: upserted.length,
-                    errors: errors.length,
-                    details: errors.length > 0 ? { errors } : undefined
-                }
-            };
         } catch (err) {
             context.log(err);
             return { status: 500, body: 'Internal Server Error' };

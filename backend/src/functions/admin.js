@@ -5,6 +5,7 @@ const { generateToken } = require('../../utils/auth');
 const { comparePassword } = require('../../utils/password');
 const csv = require('csv-parser');
 const { Readable } = require('stream');
+const crypto = require('crypto');
 
 // ──────────────────────────────────────────────
 // adminGate  —  RBAC helper
@@ -105,45 +106,90 @@ app.http('mngUploadCSV', {
         try {
             const formData = await request.formData();
             const file = formData.get('file');
-            const tiendaId = formData.get('tiendaId');
+            const tiendaId = parseInt(formData.get('tiendaId'), 10);
 
             if (!file || !tiendaId) return { status: 400, body: 'File and Store ID required' };
 
             const buffer = Buffer.from(await file.arrayBuffer());
-            const results = [];
+            const rows = [];
 
             const stream = Readable.from(buffer);
             await new Promise((resolve, reject) => {
                 stream.pipe(csv())
-                    .on('data', (data) => results.push(data))
+                    .on('data', (data) => rows.push(data))
                     .on('end', resolve)
                     .on('error', reject);
             });
 
+            if (rows.length === 0) return { status: 400, body: 'CSV file is empty' };
+
+            const requiredColumns = ['SKU', 'PrecioRegular', 'PrecioPromocion', 'EsPromocion', 'Stock'];
+            const missing = requiredColumns.filter(c => !(c in rows[0]));
+            if (missing.length > 0) {
+                return { status: 400, body: `Missing required columns: ${missing.join(', ')}` };
+            }
+
+            const sessionId = crypto.randomUUID();
             const pool = await poolPromise;
             const transaction = new sql.Transaction(pool);
             await transaction.begin();
 
             try {
-                for (const row of results) {
-                    await transaction.request()
-                        .input('tiendaId', sql.Int, tiendaId)
-                        .input('sku', sql.NVarChar, row.SKU)
-                        .input('precioRegular', sql.Decimal(18, 2), row.PrecioRegular)
-                        .input('precioPromocion', sql.Decimal(18, 2), row.PrecioPromocion || null)
-                        .input('esPromocion', sql.Bit, row.EsPromocion === '1' ? 1 : 0)
-                        .query(`
-                            UPDATE pt
-                            SET pt.PrecioRegular = @precioRegular,
-                                pt.PrecioPromocion = @precioPromocion,
-                                pt.EsPromocion = @esPromocion
-                            FROM ProductoTienda pt
-                            JOIN ProductoMaestro pm ON pt.ProductoID = pm.ProductoID
-                            WHERE pt.TiendaID = @tiendaId AND pm.SKU = @sku
-                        `);
+                // 1. Define staging table structure
+                const stagingTable = new sql.Table('TmpUploadProductoTienda');
+                stagingTable.create = false;
+                stagingTable.columns.add('SessionID', sql.UniqueIdentifier, { nullable: false });
+                stagingTable.columns.add('RowIndex', sql.Int, { nullable: false });
+                stagingTable.columns.add('SKU', sql.NVarChar(50), { nullable: false });
+                stagingTable.columns.add('PrecioRegular', sql.Decimal(18, 2), { nullable: false });
+                stagingTable.columns.add('PrecioPromocion', sql.Decimal(18, 2), { nullable: true });
+                stagingTable.columns.add('EsPromocion', sql.Bit, { nullable: false });
+                stagingTable.columns.add('Stock', sql.Decimal(18, 2), { nullable: false });
+                stagingTable.columns.add('NegocioID', sql.Int, { nullable: false });
+                stagingTable.columns.add('TiendaID', sql.Int, { nullable: false });
+
+                // 2. Populate staging rows
+                for (let i = 0; i < rows.length; i++) {
+                    const row = rows[i];
+                    stagingTable.rows.add(
+                        sessionId,
+                        i + 1,
+                        String(row.SKU).trim(),
+                        parseFloat(row.PrecioRegular) || 0,
+                        row.PrecioPromocion ? parseFloat(row.PrecioPromocion) : null,
+                        row.EsPromocion === '1' || row.EsPromocion === 'true' ? 1 : 0,
+                        parseFloat(row.Stock) || 0,
+                        gate.negocioId,
+                        tiendaId
+                    );
                 }
+
+                // 3. Bulk insert into staging table
+                const bulkRequest = new sql.Request(transaction);
+                await bulkRequest.bulk(stagingTable);
+
+                // 4. Execute stored procedure — validates SKUs and MERGEs into ProductoTienda
+                const spResult = await new sql.Request(transaction)
+                    .input('SessionID', sql.UniqueIdentifier, sessionId)
+                    .input('NegocioID', sql.Int, gate.negocioId)
+                    .input('TiendaID', sql.Int, tiendaId)
+                    .execute('sp_BulkUploadStorePrices');
+
                 await transaction.commit();
-                return { status: 200, jsonBody: { message: `Updated ${results.length} products` } };
+
+                // 5. Map SP result sets
+                const errorRows = spResult.recordsets[0] || [];
+                const counts = (spResult.recordsets[1] && spResult.recordsets[1][0]) || {};
+
+                return {
+                    status: 200,
+                    jsonBody: {
+                        message: 'Bulk upload complete',
+                        inserted: counts.InsertedCount || 0,
+                        updated: counts.UpdatedCount || 0,
+                        errors: errorRows
+                    }
+                };
             } catch (err) {
                 await transaction.rollback();
                 throw err;
