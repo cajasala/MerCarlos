@@ -3,8 +3,8 @@ const jwt = require('jsonwebtoken');
 const { app } = require('@azure/functions');
 const { poolPromise, sql } = require('../../utils/db');
 const { generateToken } = require('../../utils/auth');
-const { comparePassword } = require('../../utils/password');
 /*
+const { comparePassword } = require('../../utils/password');
 const csv = require('csv-parser');
 const { Readable } = require('stream');
 const crypto = require('crypto');
