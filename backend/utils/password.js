@@ -1,19 +1,20 @@
-//const bcrypt = require('bcrypt');
+console.log('PASSWORD.JS LOADING');
 
-/**
- * Hash a plain-text password before storing it.
- * Use this during migration / seed only.
- */
-const hashPassword = async (plainText) => {
-    return "";//await bcrypt.hash(plainText, 10);
-};
+try {
+    const bcrypt = require('bcrypt');
+    console.log('BCRYPT LOADED OK');
 
-/**
- * Compare a submitted password with a stored bcrypt hash.
- * Returns true if the password matches.
- */
-const comparePassword = async (plainText, hashed) => {
-    return ""; //await bcrypt.compare(plainText, hashed);
-};
+    const hashPassword = async (plainText) => {
+        return await bcrypt.hash(plainText, 10);
+    };
 
-module.exports = { hashPassword, comparePassword };
+    const comparePassword = async (plainText, hashed) => {
+        return await bcrypt.compare(plainText, hashed);
+    };
+
+    module.exports = { hashPassword, comparePassword };
+
+} catch (err) {
+    console.error('BCRYPT ERROR:', err);
+    throw err;
+}
