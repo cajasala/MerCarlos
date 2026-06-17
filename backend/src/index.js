@@ -1,3 +1,4 @@
+console.log('INDEX LOADED');
 require('./functions/auth');
 require('./functions/catalog');
 require('./functions/locations');
@@ -7,3 +8,4 @@ require('./functions/admin');
 require('./functions/adminBulk');
 require('./functions/adminImages');
 require('./functions/adminOrders');
+console.log('ORDERS LOADED');
