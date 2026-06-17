@@ -19,10 +19,10 @@ require('./functions/auth');
 console.log('2222222');
 require('./functions/catalog');
 console.log('3333333');
-/*
 require('./functions/locations');
 console.log('44444444');
 require('./functions/orders');
+/*
 console.log('555555555');
 require('./functions/lists');
 console.log('666666666');
