@@ -1,0 +1,9 @@
+require('./functions/auth');
+require('./functions/catalog');
+require('./functions/locations');
+require('./functions/orders');
+require('./functions/lists');
+require('./functions/admin');
+require('./functions/adminBulk');
+require('./functions/adminImages');
+require('./functions/adminOrders');
