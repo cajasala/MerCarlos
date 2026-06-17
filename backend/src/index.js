@@ -19,6 +19,7 @@ require('./functions/auth');
 console.log('2222222');
 require('./functions/catalog');
 console.log('3333333');
+/*
 require('./functions/locations');
 console.log('44444444');
 require('./functions/orders');
@@ -33,3 +34,4 @@ require('./functions/adminImages');
 console.log('9999999999');
 require('./functions/adminOrders');
 console.log('101010101010');
+*/
