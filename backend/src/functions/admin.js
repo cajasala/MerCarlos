@@ -1,9 +1,10 @@
 const jwt = require('jsonwebtoken');
-/*
+
 const { app } = require('@azure/functions');
 const { poolPromise, sql } = require('../../utils/db');
 const { generateToken } = require('../../utils/auth');
 const { comparePassword } = require('../../utils/password');
+/*
 const csv = require('csv-parser');
 const { Readable } = require('stream');
 const crypto = require('crypto');
@@ -41,7 +42,7 @@ async function adminGate(request, allowedRoles = []) {
 // ──────────────────────────────────────────────
 // POST /mng/login
 // ──────────────────────────────────────────────
-/*
+
 app.http('mngLogin', {
     methods: ['POST'],
     authLevel: 'anonymous',
@@ -92,7 +93,7 @@ app.http('mngLogin', {
         }
     }
 });
-
+/*
 // ──────────────────────────────────────────────
 // POST /mng/upload-csv   — Carga Masiva de Precios
 // Auth: ADM, PED, EDI
