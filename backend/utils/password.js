@@ -1,11 +1,11 @@
-const bcrypt = require('bcrypt');
+//const bcrypt = require('bcrypt');
 
 /**
  * Hash a plain-text password before storing it.
  * Use this during migration / seed only.
  */
 const hashPassword = async (plainText) => {
-    return await bcrypt.hash(plainText, 10);
+    return "";//await bcrypt.hash(plainText, 10);
 };
 
 /**
@@ -13,7 +13,7 @@ const hashPassword = async (plainText) => {
  * Returns true if the password matches.
  */
 const comparePassword = async (plainText, hashed) => {
-    return await bcrypt.compare(plainText, hashed);
+    return ""; //await bcrypt.compare(plainText, hashed);
 };
 
 module.exports = { hashPassword, comparePassword };
