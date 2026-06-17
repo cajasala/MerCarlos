@@ -13,3 +13,5 @@ app.http('health', {
         };
     }
 });
+
+require('./functions/auth');
