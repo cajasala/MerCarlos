@@ -22,12 +22,12 @@ console.log('3333333');
 require('./functions/locations');
 console.log('44444444');
 require('./functions/orders');
-/*
 console.log('555555555');
 require('./functions/lists');
 console.log('666666666');
 require('./functions/admin');
 console.log('777777777');
+/*
 require('./functions/adminBulk');
 console.log('8888888888');
 require('./functions/adminImages');
