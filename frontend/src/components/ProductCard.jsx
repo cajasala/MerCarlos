@@ -13,16 +13,22 @@ const ProductCard = ({ product, onAddToCart, onShowDetail }) => {
     ImagenURL 
   } = product;
 
-  const activePrice = EsPromocion && PrecioPromocion ? PrecioPromocion : PrecioRegular;
+  const defaultImage = `${import.meta.env.BASE_URL}default-product.svg`;
+
+  const handleImageError = (e) => {
+    e.target.onerror = null;
+    e.target.src = defaultImage;
+  };
 
   return (
     <div className="product-card card animate-fade-in">
       <div className="product-image-container">
         {EsPromocion && <span className="promo-badge">Oferta</span>}
         <img 
-          src={ImagenURL || 'https://via.placeholder.com/200x200?text=MerCarlos'} 
+          src={ImagenURL || defaultImage} 
           alt={Nombre} 
           className="product-image"
+          onError={handleImageError}
         />
         <button className="quick-view-btn" onClick={() => onShowDetail(product)}>
           <Eye size={18} />

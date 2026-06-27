@@ -25,6 +25,13 @@ const ProductDetail = ({ productId, storeId, onClose, onAddToCart }) => {
     }
   };
 
+  const defaultImage = `${import.meta.env.BASE_URL}default-product.svg`;
+
+  const handleImageError = (e) => {
+    e.target.onerror = null;
+    e.target.src = defaultImage;
+  };
+
   if (loading) return (
     <div className="product-detail-overlay">
       <div className="product-detail-content loading">Cargando detalles...</div>
@@ -34,8 +41,8 @@ const ProductDetail = ({ productId, storeId, onClose, onAddToCart }) => {
   if (!product) return null;
 
   const images = product.Imagenes && product.Imagenes.length > 0 
-    ? product.Imagenes 
-    : [{ ImagenURL: 'https://via.placeholder.com/400x400?text=MerCarlos' }];
+    ? product.Imagenes.map(img => ({ ...img, ImagenURL: img.ImagenURL || defaultImage }))
+    : [{ ImagenURL: defaultImage }];
 
   return (
     <div className="product-detail-overlay animate-fade-in">
@@ -48,7 +55,12 @@ const ProductDetail = ({ productId, storeId, onClose, onAddToCart }) => {
           {/* Image Gallery */}
           <div className="image-gallery">
             <div className="main-image-container">
-              <img src={images[currentImageIndex].ImagenURL} alt={product.Nombre} className="main-image" />
+              <img 
+                src={images[currentImageIndex].ImagenURL} 
+                alt={product.Nombre} 
+                className="main-image" 
+                onError={handleImageError}
+              />
               {images.length > 1 && (
                 <>
                   <button 
@@ -74,6 +86,7 @@ const ProductDetail = ({ productId, storeId, onClose, onAddToCart }) => {
                   alt="thumbnail" 
                   className={`thumbnail ${idx === currentImageIndex ? 'active' : ''}`}
                   onClick={() => setCurrentImageIndex(idx)}
+                  onError={handleImageError}
                 />
               ))}
             </div>

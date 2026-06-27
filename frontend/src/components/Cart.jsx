@@ -5,6 +5,13 @@ import './Cart.css';
 const Cart = ({ isOpen, onClose, cartItems, onUpdateQuantity, onRemove, onCheckout }) => {
   if (!isOpen) return null;
 
+  const defaultImage = `${import.meta.env.BASE_URL}default-product.svg`;
+
+  const handleImageError = (e) => {
+    e.target.onerror = null;
+    e.target.src = defaultImage;
+  };
+
   const total = cartItems.reduce((acc, item) => {
     const price = item.EsPromocion ? item.PrecioPromocion : item.PrecioRegular;
     return acc + (price * item.quantity);
@@ -34,7 +41,12 @@ const Cart = ({ isOpen, onClose, cartItems, onUpdateQuantity, onRemove, onChecko
             <div className="cart-items">
               {cartItems.map(item => (
                 <div key={item.ProductoID} className="cart-item">
-                  <img src={item.ImagenURL || 'https://via.placeholder.com/80x80'} alt={item.Nombre} className="cart-item-img" />
+                  <img 
+                    src={item.ImagenURL || defaultImage} 
+                    alt={item.Nombre} 
+                    className="cart-item-img" 
+                    onError={handleImageError}
+                  />
                   <div className="cart-item-info">
                     <h4>{item.Nombre}</h4>
                     <p className="cart-item-unit">{item.DisplayPrecioPorUnidad}</p>

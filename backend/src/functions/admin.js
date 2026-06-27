@@ -42,7 +42,6 @@ async function adminGate(request, allowedRoles = []) {
 // ──────────────────────────────────────────────
 // POST /mng/login
 // ──────────────────────────────────────────────
-/*
 app.http('mngLogin', {
     methods: ['POST'],
     authLevel: 'anonymous',
@@ -203,4 +202,3 @@ app.http('mngUploadCSV', {
         }
     }
 });
-*/

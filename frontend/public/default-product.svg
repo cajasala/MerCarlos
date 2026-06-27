@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f8fafc" />
+      <stop offset="100%" stop-color="#e2e8f0" />
+    </linearGradient>
+    <linearGradient id="iconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2e7d32" />
+      <stop offset="100%" stop-color="#1b5e20" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Fondo con bordes redondeados suave -->
+  <rect width="100%" height="100%" fill="url(#bgGrad)" rx="16" />
+  
+  <!-- Icono de Bolsa de Compras Premium en el centro -->
+  <g transform="translate(120, 110)" stroke="url(#iconGrad)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Asa de la bolsa -->
+    <path d="M50 50 C50 10, 110 10, 110 50" />
+    <!-- Cuerpo de la bolsa -->
+    <path d="M20 50 L140 50 C145 50, 150 55, 148 65 L135 160 C133 170, 125 175, 115 175 L45 175 C35 175, 27 170, 25 160 L12 65 C10 55, 15 50, 20 50 Z" />
+    <!-- Detalle interior -->
+    <circle cx="80" cy="110" r="24" stroke-dasharray="8,6" opacity="0.6" />
+  </g>
+  
+  <!-- Textos de marca y estado -->
+  <text x="50%" y="320" text-anchor="middle" font-family="'Outfit', sans-serif" font-size="22" font-weight="600" fill="#64748b" letter-spacing="1">
+    MerCarlos
+  </text>
+  <text x="50%" y="345" text-anchor="middle" font-family="'Outfit', sans-serif" font-size="14" font-weight="400" fill="#94a3b8" letter-spacing="0.5">
+    Imagen no disponible
+  </text>
+</svg>

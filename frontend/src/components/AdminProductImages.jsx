@@ -14,6 +14,13 @@ const AdminProductImages = ({ productId }) => {
     const [uploading, setUploading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
 
+    const defaultImage = `${import.meta.env.BASE_URL}default-product.svg`;
+
+    const handleImageError = (e) => {
+        e.target.onerror = null;
+        e.target.src = defaultImage;
+    };
+
     useEffect(() => {
         if (selectedProductId) fetchImages();
     }, [selectedProductId]);
@@ -145,7 +152,12 @@ const AdminProductImages = ({ productId }) => {
                     <p className="no-images-msg">No hay imágenes para este producto.</p>
                 ) : images.map(img => (
                     <div key={img.ImagenID} className={`img-card ${img.EsPortada ? 'img-cover' : ''}`}>
-                        <img src={img.ImagenURL} alt={`Producto ${img.ProductoID}`} loading="lazy" />
+                        <img 
+                            src={img.ImagenURL || defaultImage} 
+                            alt={`Producto ${img.ProductoID}`} 
+                            loading="lazy" 
+                            onError={handleImageError} 
+                        />
                         {img.EsPortada && <span className="cover-badge">PORTADA</span>}
                         <button
                             className="img-delete-btn"
