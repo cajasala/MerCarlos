@@ -19,6 +19,7 @@ let poolPromise = sql.connect(config)
         return pool;
     })
     .catch(err => {
+        console.log('Azure SQL : ' +  process.env.DB_SERVER);
         console.error('Database Connection Failed! Bad Config: ', err);
         throw err;
     });
