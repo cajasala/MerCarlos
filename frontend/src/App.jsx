@@ -38,6 +38,7 @@ function App() {
   const [currentView, setCurrentView] = useState('home'); // home, profile, lists, orders, admin
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [adminActiveView, setAdminActiveView] = useState('prices'); // prices, orders, bulkProducts, productImages
+  const [pendingCheckout, setPendingCheckout] = useState(false);
 
   useEffect(() => {
     const adminToken = localStorage.getItem('adminToken');
@@ -82,6 +83,12 @@ function App() {
     localStorage.setItem('token', data.token);
     axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
 
+    if (pendingCheckout) {
+      setPendingCheckout(false);
+      submitOrder();
+      return;
+    }
+
     const savedStore = localStorage.getItem('selectedStore');
     if (savedStore) {
       const store = JSON.parse(savedStore);
@@ -118,19 +125,14 @@ function App() {
   }, [cartItems]);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setIsAuthOpen(true);
+    const savedStore = localStorage.getItem('selectedStore');
+    if (savedStore) {
+      const store = JSON.parse(savedStore);
+      setSelectedStore(store);
+      fetchProducts(store.TiendaID, null, '', true);
     } else {
-      const savedStore = localStorage.getItem('selectedStore');
-      if (savedStore) {
-        const store = JSON.parse(savedStore);
-        setSelectedStore(store);
-        fetchProducts(store.TiendaID, null, '', true);
-      } else {
-        setIsFirstVisit(true);
-        setIsStoreSelectorOpen(true);
-      }
+      setIsFirstVisit(true);
+      setIsStoreSelectorOpen(true);
     }
   }, []);
 
@@ -207,12 +209,7 @@ function App() {
     setCartItems(prev => prev.filter(item => item.ProductoID !== productId));
   };
 
-  const handleCheckout = async () => {
-    if (!user) {
-      setIsAuthOpen(true);
-      return;
-    }
-
+  const submitOrder = async () => {
     const token = localStorage.getItem('token');
     const total = cartItems.reduce((acc, item) => {
       const price = item.EsPromocion ? item.PrecioPromocion : item.PrecioRegular;
@@ -227,7 +224,7 @@ function App() {
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       setCartItems([]);
       setIsCartOpen(false);
       setCurrentView('orders');
@@ -236,6 +233,16 @@ function App() {
       console.error('Error in checkout', err);
       alert('Hubo un error al procesar tu pedido.');
     }
+  };
+
+  const handleCheckout = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setPendingCheckout(true);
+      setIsAuthOpen(true);
+      return;
+    }
+    await submitOrder();
   };
 
   const sortedProducts = [...products].sort((a, b) => {
@@ -371,11 +378,11 @@ function App() {
         onCheckout={handleCheckout}
       />
 
-      <AuthModal 
+      <AuthModal
         isOpen={isAuthOpen}
-        onClose={() => setIsAuthOpen(false)}
+        onClose={() => { setIsAuthOpen(false); setPendingCheckout(false); }}
         onLoginSuccess={handleLoginSuccess}
-        mandatory={!user}
+        mandatory={pendingCheckout}
       />
 
       <StoreSelector 

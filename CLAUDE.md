@@ -12,11 +12,13 @@ Backend (`backend/`):
 - `npm start` — runs `func start` (Azure Functions Core Tools v4, port 7071, base path `/api`).
 - `npm test` — Jest suite (`backend/tests/*.test.js`). Note: `checkout.integration.test.js` is an integration test that calls the live API at `http://localhost:7073/api`; it requires a running Functions host and a populated DB.
 - Single test: `npx jest tests/rbac.smoke.test.js` (run from `backend/`).
+- The integration test (`checkout.integration.test.js`) targets port **7073**, not 7071 — run a second Functions host on that port when needed.
 
 Frontend (`frontend/`):
 - `npm run dev` — Vite dev server on port 5173. Admin panel at `http://localhost:5173/?mode=admin` (dev credentials: `admin` / `admin123`).
 - `npm run build` / `npm run preview` / `npm run lint` (ESLint flat config).
 - Vite proxies `/mng/*` → `http://localhost:7071`. All other API calls use `VITE_API_URL` (default `http://localhost:7071/api`).
+- **Production base path is `/MerCarlos/`** (GitHub Pages). Vite sets this in `vite.config.js`; local dev uses `/`. Don't hardcode absolute paths in the frontend.
 
 Database: SQL files in `database/` are applied **in numeric order** (`01_…` → `07_…`). Incremental migrations live in `database/migrations/` (e.g. `001_rolid_varchar3.sql`). There is no migration runner — apply manually against the target SQL Server instance.
 

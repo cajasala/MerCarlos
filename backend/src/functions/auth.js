@@ -1,7 +1,7 @@
 const { app } = require('@azure/functions');
 const { poolPromise, sql } = require('../../utils/db');
 const { sendSMS, generateOTP } = require('../../utils/sms');
-const { generateToken } = require('../../utils/auth');
+const { generateToken, authenticate } = require('../../utils/auth');
 
 // POST /auth/request-otp
 app.http('requestOTP', {
@@ -60,6 +60,7 @@ app.http('verifyOTP', {
                 .query('SELECT * FROM Cliente WHERE Telefono = @telefono');
 
             let user;
+            let isNew = false;
             if (userResult.recordset.length === 0) {
                 // Register new user
                 const insertResult = await pool.request()
@@ -70,6 +71,7 @@ app.http('verifyOTP', {
                     .input('fidelizacion', sql.NVarChar, codigoFidelizacion || '')
                     .query('INSERT INTO Cliente (Telefono, Nombre, Apellido, Email, CodigoFidelizacion) OUTPUT INSERTED.* VALUES (@telefono, @nombre, @apellido, @email, @fidelizacion)');
                 user = insertResult.recordset[0];
+                isNew = true;
             } else {
                 user = userResult.recordset[0];
             }
@@ -81,12 +83,58 @@ app.http('verifyOTP', {
                 status: 200,
                 jsonBody: {
                     token,
+                    isNew,
                     user: {
                         id: user.ClienteID,
                         nombre: user.Nombre,
                         apellido: user.Apellido,
                         telefono: user.Telefono,
                         email: user.Email
+                    }
+                }
+            };
+        } catch (err) {
+            context.log(err);
+            return { status: 500, body: 'Internal Server Error' };
+        }
+    }
+});
+
+// PATCH /auth/profile
+app.http('updateProfile', {
+    methods: ['PATCH'],
+    authLevel: 'anonymous',
+    route: 'auth/profile',
+    handler: async (request, context) => {
+        try {
+            const auth = authenticate(request);
+            if (!auth) return { status: 401, body: 'Unauthorized' };
+
+            const { nombre, apellido, email } = await request.json();
+
+            const pool = await poolPromise;
+            const result = await pool.request()
+                .input('clienteId', sql.Int, auth.id)
+                .input('nombre', sql.NVarChar, nombre || '')
+                .input('apellido', sql.NVarChar, apellido || '')
+                .input('email', sql.NVarChar, email || '')
+                .query(`UPDATE Cliente
+                        SET Nombre = @nombre, Apellido = @apellido, Email = @email
+                        OUTPUT INSERTED.ClienteID, INSERTED.Nombre, INSERTED.Apellido, INSERTED.Telefono, INSERTED.Email
+                        WHERE ClienteID = @clienteId`);
+
+            if (result.recordset.length === 0) return { status: 404, body: 'User not found' };
+
+            const u = result.recordset[0];
+            return {
+                status: 200,
+                jsonBody: {
+                    user: {
+                        id: u.ClienteID,
+                        nombre: u.Nombre,
+                        apellido: u.Apellido,
+                        telefono: u.Telefono,
+                        email: u.Email
                     }
                 }
             };

@@ -6,7 +6,7 @@ import './AuthModal.css';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:7071/api';
 
 const AuthModal = ({ isOpen, onClose, onLoginSuccess, mandatory = false }) => {
-  const [step, setStep] = useState(1); // 1: Phone, 2: OTP/Details
+  const [step, setStep] = useState(1); // 1: Phone, 2: OTP, 3: Profile (new users only)
   const [formData, setFormData] = useState({
     telefono: '',
     code: '',
@@ -15,6 +15,7 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess, mandatory = false }) => {
     email: '',
     codigoFidelizacion: ''
   });
+  const [pendingLoginData, setPendingLoginData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -39,11 +40,40 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess, mandatory = false }) => {
     setLoading(true);
     setError('');
     try {
-      const res = await axios.post(`${API_URL}/auth/verify-otp`, formData);
-      onLoginSuccess(res.data);
-      onClose();
+      const res = await axios.post(`${API_URL}/auth/verify-otp`, {
+        telefono: formData.telefono,
+        code: formData.code
+      });
+      if (res.data.isNew) {
+        setPendingLoginData(res.data);
+        setStep(3);
+      } else {
+        onLoginSuccess(res.data);
+        onClose();
+      }
     } catch (err) {
       setError('Código inválido o error en el registro.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCompleteProfile = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const res = await axios.patch(`${API_URL}/auth/profile`, {
+        nombre: formData.nombre,
+        apellido: formData.apellido,
+        email: formData.email
+      }, {
+        headers: { Authorization: `Bearer ${pendingLoginData.token}` }
+      });
+      onLoginSuccess({ ...pendingLoginData, user: res.data.user });
+      onClose();
+    } catch (err) {
+      setError('Error guardando el perfil.');
     } finally {
       setLoading(false);
     }
@@ -57,7 +87,7 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess, mandatory = false }) => {
     <div className="modal-overlay auth-overlay">
       <div className="modal-content auth-content animate-fade-in">
         <div className="auth-header">
-          <h2>{step === 1 ? 'Bienvenido' : 'Verifica tu cuenta'}</h2>
+          <h2>{step === 1 ? 'Bienvenido' : step === 2 ? 'Verifica tu cuenta' : 'Tu perfil'}</h2>
           {!mandatory && (
             <button className="close-btn" onClick={onClose}><X size={24} /></button>
           )}
@@ -66,18 +96,18 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess, mandatory = false }) => {
         <div className="auth-body">
           {error && <div className="auth-error">{error}</div>}
 
-          {step === 1 ? (
+          {step === 1 && (
             <form onSubmit={handleSendOTP} className="auth-form">
               <p>Ingresa tu número de celular para continuar</p>
               <div className="input-group">
                 <Smartphone size={20} className="input-icon" />
-                <input 
-                  type="tel" 
+                <input
+                  type="tel"
                   name="telefono"
-                  placeholder="Número de Celular" 
+                  placeholder="Número de Celular"
                   value={formData.telefono}
                   onChange={handleChange}
-                  required 
+                  required
                 />
               </div>
               <button className="btn btn-primary btn-full" disabled={loading}>
@@ -85,47 +115,52 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess, mandatory = false }) => {
                 <ArrowRight size={18} />
               </button>
             </form>
-          ) : (
-            <form onSubmit={handleVerifyOTP} className="auth-form scrollable">
+          )}
+
+          {step === 2 && (
+            <form onSubmit={handleVerifyOTP} className="auth-form">
               <p>Hemos enviado un código a <strong>{formData.telefono}</strong></p>
-              
               <div className="input-group">
                 <ShieldCheck size={20} className="input-icon" />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   name="code"
-                  placeholder="Código de 6 dígitos" 
+                  placeholder="Código de 6 dígitos"
                   value={formData.code}
                   onChange={handleChange}
-                  required 
+                  required
                 />
               </div>
-
-              <div className="registration-fields">
-                <p className="section-label">Completa tu perfil (Primera vez)</p>
-                <div className="input-row">
-                  <div className="input-group">
-                    <User size={18} className="input-icon" />
-                    <input name="nombre" placeholder="Nombre" onChange={handleChange} required />
-                  </div>
-                  <div className="input-group">
-                    <input name="apellido" placeholder="Apellido" onChange={handleChange} required />
-                  </div>
-                </div>
-                <div className="input-group">
-                  <Mail size={18} className="input-icon" />
-                  <input name="email" type="email" placeholder="Email" onChange={handleChange} required />
-                </div>
-                <div className="input-group">
-                  <input name="codigoFidelizacion" placeholder="Código de Fidelización (Opcional)" onChange={handleChange} />
-                </div>
-              </div>
-
               <button className="btn btn-primary btn-full" disabled={loading}>
-                {loading ? 'Verificando...' : 'Completar Registro'}
+                {loading ? 'Verificando...' : 'Continuar'}
               </button>
               <button type="button" className="btn-link" onClick={() => setStep(1)}>
                 Cambiar número de celular
+              </button>
+            </form>
+          )}
+
+          {step === 3 && (
+            <form onSubmit={handleCompleteProfile} className="auth-form scrollable">
+              <p className="section-label">Completa tu perfil para continuar</p>
+              <div className="input-row">
+                <div className="input-group">
+                  <User size={18} className="input-icon" />
+                  <input name="nombre" placeholder="Nombre" onChange={handleChange} required />
+                </div>
+                <div className="input-group">
+                  <input name="apellido" placeholder="Apellido" onChange={handleChange} required />
+                </div>
+              </div>
+              <div className="input-group">
+                <Mail size={18} className="input-icon" />
+                <input name="email" type="email" placeholder="Email" onChange={handleChange} required />
+              </div>
+              <div className="input-group">
+                <input name="codigoFidelizacion" placeholder="Código de Fidelización (Opcional)" onChange={handleChange} />
+              </div>
+              <button className="btn btn-primary btn-full" disabled={loading}>
+                {loading ? 'Guardando...' : 'Completar Registro'}
               </button>
             </form>
           )}
