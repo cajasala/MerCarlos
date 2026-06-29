@@ -67,7 +67,6 @@ function App() {
           localStorage.removeItem('user');
           localStorage.removeItem('token');
           delete axios.defaults.headers.common['Authorization'];
-          setIsAuthOpen(true);
         }
         return Promise.reject(error);
       }

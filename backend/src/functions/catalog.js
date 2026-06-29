@@ -1,6 +1,5 @@
 const { app } = require('@azure/functions');
 const { poolPromise, sql } = require('../../utils/db');
-const { authenticate } = require('../../utils/auth');
 
 // GET /categories
 app.http('getCategories', {
@@ -8,9 +7,6 @@ app.http('getCategories', {
     authLevel: 'anonymous',
     route: 'categories',
     handler: async (request, context) => {
-        const user = authenticate(request);
-        if (!user) return { status: 401, body: 'Unauthorized' };
-
         try {
             const pool = await poolPromise;
             const result = await pool.request().query('SELECT CategoriaID, Nombre FROM Categoria');
@@ -32,9 +28,6 @@ app.http('getSubCategories', {
     authLevel: 'anonymous',
     route: 'subcategories/{categoryId}',
     handler: async (request, context) => {
-        const user = authenticate(request);
-        if (!user) return { status: 401, body: 'Unauthorized' };
-
         const categoryId = request.params.categoryId;
         
         try {
@@ -59,9 +52,6 @@ app.http('getProductsByStore', {
     authLevel: 'anonymous',
     route: 'products/{storeId}',
     handler: async (request, context) => {
-        const user = authenticate(request);
-        if (!user) return { status: 401, body: 'Unauthorized' };
-
         const storeId = request.params.storeId;
         const search = request.query.get('search');
         const subCategoryId = request.query.get('subCategoryId');
@@ -129,9 +119,6 @@ app.http('getProductDetail', {
     authLevel: 'anonymous',
     route: 'product/{productId}/{storeId}',
     handler: async (request, context) => {
-        const user = authenticate(request);
-        if (!user) return { status: 401, body: 'Unauthorized' };
-
         const productId = request.params.productId;
         const storeId = request.params.storeId;
 
