@@ -17,7 +17,7 @@
 
 const assert = require('assert');
 const jwt = require('jsonwebtoken');
-const { poolPromise, sql } = require('../utils/db');
+const { getPool, sql } = require('../utils/db');
 
 const API = process.env.API_URL || 'http://localhost:7071/api';
 const secret = process.env.JWT_SECRET;
@@ -73,7 +73,7 @@ describe('RBAC - Role Enforcing', () => {
 
     it('PED can advance order status one step at a time', async () => {
         // Create order first; get its ID from DB for testing
-        const pool = await poolPromise;
+        const pool = await getPool();
         const result = await pool.request()
             .input('negocioId', sql.Int, negocioId)
             .query(`
@@ -106,7 +106,7 @@ describe('RBAC - Role Enforcing', () => {
     });
 
     it('PED cannot skip Despachado to Entregado', async () => {
-        const pool = await poolPromise;
+        const pool = await getPool();
         const result = await pool.request()
             .input('negocioId', sql.Int, negocioId)
             .query(`
@@ -138,7 +138,7 @@ describe('RBAC - Role Enforcing', () => {
     });
 
     it('ADM can jump freely', async () => {
-        const pool = await poolPromise;
+        const pool = await getPool();
         const result = await pool.request()
             .input('negocioId', sql.Int, negocioId)
             .query(`
@@ -169,7 +169,7 @@ describe('RBAC - Role Enforcing', () => {
 
     // ─── 10.3 Cancellation from source state ─────────────────────────────────
     it('PED can cancel from Alistamiento state', async () => {
-        const pool = await poolPromise;
+        const pool = await getPool();
         const result = await pool.request()
             .input('negocioId', sql.Int, negocioId)
             .query(`
@@ -210,7 +210,7 @@ describe('RBAC - Role Enforcing', () => {
         });
         assert.strictEqual(res.status, 200);
         const orders = await res.json();
-        const pool = await poolPromise;
+        const pool = await getPool();
         const negocioOrders = await pool.request()
             .input('negocioId', sql.Int, negocioId)
             .query(`SELECT o.OrdenID FROM Orden o JOIN Tienda t ON o.TiendaID = t.TiendaID WHERE t.NegocioID = @negocioId`);

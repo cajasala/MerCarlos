@@ -1,5 +1,5 @@
 const { app } = require('@azure/functions');
-const { poolPromise, sql } = require('../../utils/db');
+const { getPool, sql } = require('../../utils/db');
 const { authenticate } = require('../../utils/auth');
 
 // GET /lists
@@ -12,7 +12,7 @@ app.http('getLists', {
         if (!user) return { status: 401, body: 'Unauthorized' };
 
         try {
-            const pool = await poolPromise;
+            const pool = await getPool();
             const result = await pool.request()
                 .input('clienteId', sql.Int, user.id)
                 .query('SELECT * FROM ListaCompra WHERE ClienteID = @clienteId ORDER BY CreatedAt DESC');
@@ -36,7 +36,7 @@ app.http('createList', {
 
         try {
             const { nombre } = await request.json();
-            const pool = await poolPromise;
+            const pool = await getPool();
             const result = await pool.request()
                 .input('clienteId', sql.Int, user.id)
                 .input('nombre', sql.NVarChar, nombre)
@@ -61,7 +61,7 @@ app.http('deleteList', {
 
         try {
             const id = request.params.id;
-            const pool = await poolPromise;
+            const pool = await getPool();
             await pool.request()
                 .input('id', sql.Int, id)
                 .input('clienteId', sql.Int, user.id)

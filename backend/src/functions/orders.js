@@ -1,5 +1,5 @@
 const { app } = require('@azure/functions');
-const { poolPromise, sql } = require('../../utils/db');
+const { getPool, sql } = require('../../utils/db');
 const { authenticate } = require('../../utils/auth');
 
 // GET /orders
@@ -12,7 +12,7 @@ app.http('getOrders', {
         if (!user) return { status: 401, body: 'Unauthorized' };
 
         try {
-            const pool = await poolPromise;
+            const pool = await getPool();
             const result = await pool.request()
                 .input('clienteId', sql.Int, user.id)
                 .query(`
@@ -42,7 +42,7 @@ app.http('createOrder', {
 
         try {
             const { tiendaId, items, total } = await request.json();
-            const pool = await poolPromise;
+            const pool = await getPool();
 
             // Resolve default status outside transaction (no locking needed)
             const statusResult = await pool.request()

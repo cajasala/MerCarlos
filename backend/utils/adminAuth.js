@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { sql, poolPromise } = require('./db');
+const { sql, getPool } = require('./db');
 require('dotenv').config();
 
 const secret = process.env.JWT_SECRET;

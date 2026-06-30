@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 
 const { app } = require('@azure/functions');
-const { poolPromise, sql } = require('../../utils/db');
+const { getPool, sql } = require('../../utils/db');
 const { generateToken } = require('../../utils/auth');
 const { comparePassword } = require('../../utils/password');
 /*
@@ -59,7 +59,7 @@ app.http('mngLogin', {
                 return { status: 400, body: 'Username and password required' };
             }
 
-            const pool = await poolPromise;
+            const pool = await getPool();
 
             // Return hash for bcrypt comparison (no identity check)
             const result = await pool.request()
@@ -132,7 +132,7 @@ app.http('mngUploadCSV', {
             }
 
             const sessionId = crypto.randomUUID();
-            const pool = await poolPromise;
+            const pool = await getPool();
             const transaction = new sql.Transaction(pool);
             await transaction.begin();
 

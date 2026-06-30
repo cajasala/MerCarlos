@@ -1,7 +1,7 @@
-const { poolPromise, sql } = require('./utils/db');
+const { getPool, sql } = require('./utils/db');
 (async () => {
   try {
-    const pool = await poolPromise;
+    const pool = await getPool();
     const result = await pool.request().query('SELECT 1 as test');
     console.log('Database connection successful:', result.recordset);
     

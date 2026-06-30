@@ -1,5 +1,5 @@
 const { app } = require('@azure/functions');
-const { poolPromise, sql } = require('../../utils/db');
+const { getPool, sql } = require('../../utils/db');
 const { requireAdmin } = require('../../utils/adminAuth');
 
 // ╔═══════════════════════════════════════════════════════════╗
@@ -19,7 +19,7 @@ app.http('updateOrderStatus', {
         if (!statusName || typeof statusName !== 'string')
             return { status: 400, body: 'statusName is required' };
 
-        const pool = await poolPromise;
+        const pool = await getPool();
 
         try {
             // 1. Resolve StatusID from name
@@ -120,7 +120,7 @@ app.http('listAdminOrders', {
         if (!auth.authorized) return { status: auth.status, body: auth.body };
 
         try {
-            const pool = await poolPromise;
+            const pool = await getPool();
             const statusFilter = request.query.get('statusName');
 
             let query = `
@@ -159,7 +159,7 @@ app.http('getAdminOrderDetail', {
         if (!auth.authorized) return { status: auth.status, body: auth.body };
 
         try {
-            const pool = await poolPromise;
+            const pool = await getPool();
             const result = await pool.request()
                 .input('orderId', sql.Int, orderId)
                 .input('negocioId', sql.Int, auth.negocioId)

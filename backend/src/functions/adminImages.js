@@ -1,5 +1,5 @@
 const { app } = require('@azure/functions');
-const { poolPromise, sql } = require('../../utils/db');
+const { getPool, sql } = require('../../utils/db');
 const { requireAdmin } = require('../../utils/adminAuth');
 
 // POST /api/admin/products/{productId}/images
@@ -42,7 +42,7 @@ app.http('uploadProductImage', {
             // Upload to blob storage via static helper
             const imageUrl = await uploadToBlob(parsedId, file.name, imageBytes, file.type);
 
-            const pool = await poolPromise;
+            const pool = await getPool();
             const transaction = new sql.Transaction(pool);
             await transaction.begin();
 
@@ -93,7 +93,7 @@ app.http('listProductImages', {
 
         try {
             const { productId } = request.params;
-            const pool = await poolPromise;
+            const pool = await getPool();
             const result = await pool.request()
                 .input('productId', sql.Int, parseInt(productId, 10))
                 .query(`
@@ -125,7 +125,7 @@ app.http('deleteProductImage', {
             const { imagenId } = request.params;
             const { productId } = request.params; // eslint-disable-line no-unused-vars
 
-            const pool = await poolPromise;
+            const pool = await getPool();
             const result = await pool.request()
                 .input('imagenId', sql.Int, parseInt(imagenId, 10))
                 .query('SELECT ProductoID, ImagenURL FROM ProductoImagen WHERE ImagenID = @imagenId');

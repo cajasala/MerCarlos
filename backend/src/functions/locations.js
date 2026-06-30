@@ -1,5 +1,5 @@
 const { app } = require('@azure/functions');
-const { poolPromise, sql } = require('../../utils/db');
+const { getPool, sql } = require('../../utils/db');
 
 // GET /cities
 app.http('getCities', {
@@ -8,7 +8,7 @@ app.http('getCities', {
     route: 'cities',
     handler: async (request, context) => {
         try {
-            const pool = await poolPromise;
+            const pool = await getPool();
             const result = await pool.request().query('SELECT CiudadID, Nombre FROM Ciudad');
             
             return {
@@ -32,7 +32,7 @@ app.http('getStoresByCity', {
         const cityId = request.params.cityId;
         
         try {
-            const pool = await poolPromise;
+            const pool = await getPool();
             const result = await pool.request()
                 .input('cityId', sql.Int, cityId)
                 .query('SELECT TiendaID, Nombre, TelefonoWhatsApp FROM Tienda WHERE CiudadID = @cityId');

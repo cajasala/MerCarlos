@@ -1,5 +1,5 @@
 const { app } = require('@azure/functions');
-const { poolPromise, sql } = require('../../utils/db');
+const { getPool, sql } = require('../../utils/db');
 
 // GET /categories
 app.http('getCategories', {
@@ -8,7 +8,7 @@ app.http('getCategories', {
     route: 'categories',
     handler: async (request, context) => {
         try {
-            const pool = await poolPromise;
+            const pool = await getPool();
             const result = await pool.request().query('SELECT CategoriaID, Nombre FROM Categoria');
             
             return {
@@ -31,7 +31,7 @@ app.http('getSubCategories', {
         const categoryId = request.params.categoryId;
         
         try {
-            const pool = await poolPromise;
+            const pool = await getPool();
             const result = await pool.request()
                 .input('categoryId', sql.Int, categoryId)
                 .query('SELECT SubCategoriaID, Nombre FROM SubCategoria WHERE CategoriaID = @categoryId');
@@ -59,7 +59,7 @@ app.http('getProductsByStore', {
         const isPromotion = request.query.get('isPromotion') === 'true';
 
         try {
-            const pool = await poolPromise;
+            const pool = await getPool();
             let query = `
                 SELECT 
                     pm.ProductoID, pm.Nombre, pm.Descripcion, pm.SKU, pm.UnidadMedidaBase, pm.CantidadUnidadBase,
@@ -123,7 +123,7 @@ app.http('getProductDetail', {
         const storeId = request.params.storeId;
 
         try {
-            const pool = await poolPromise;
+            const pool = await getPool();
             
             // 1. Get Product Maestro and Store Price
             const productResult = await pool.request()

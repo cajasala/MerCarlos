@@ -8,23 +8,32 @@ const config = {
     server: process.env.DB_SERVER,
     database: process.env.DB_DATABASE,
     options: {
-        encrypt: true, // For Azure SQL
+        encrypt: true,
         trustServerCertificate: true
     }
 };
 
-let poolPromise = sql.connect(config)
+let _poolPromise = sql.connect(config)
     .then(pool => {
         console.log('Connected to Azure SQL' + process.env.DB_SERVER);
         return pool;
     })
     .catch(err => {
-        console.log('Azure SQL : ' +  process.env.DB_SERVER);
+        console.log('Azure SQL : ' + process.env.DB_SERVER);
         console.error('Database Connection Failed! Bad Config: ', err);
         throw err;
     });
 
+async function getPool() {
+    try {
+        return await _poolPromise;
+    } catch {
+        _poolPromise = sql.connect(config);
+        return _poolPromise;
+    }
+}
+
 module.exports = {
     sql,
-    poolPromise
+    getPool
 };

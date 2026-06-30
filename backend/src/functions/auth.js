@@ -1,5 +1,5 @@
 const { app } = require('@azure/functions');
-const { poolPromise, sql } = require('../../utils/db');
+const { getPool, sql } = require('../../utils/db');
 const { sendSMS, generateOTP } = require('../../utils/sms');
 const { generateToken, authenticate } = require('../../utils/auth');
 
@@ -16,7 +16,7 @@ app.http('requestOTP', {
             const otp = generateOTP();
             const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
-            const pool = await poolPromise;
+            const pool = await getPool();
             await pool.request()
                 .input('telefono', sql.NVarChar, telefono)
                 .input('code', sql.NVarChar, otp)
@@ -42,7 +42,7 @@ app.http('verifyOTP', {
         try {
             const { telefono, code, nombre, apellido, email, codigoFidelizacion } = await request.json();
             
-            const pool = await poolPromise;
+            const pool = await getPool();
             
             // 1. Verify OTP
             const otpResult = await pool.request()
@@ -112,7 +112,7 @@ app.http('updateProfile', {
 
             const { nombre, apellido, email } = await request.json();
 
-            const pool = await poolPromise;
+            const pool = await getPool();
             const result = await pool.request()
                 .input('clienteId', sql.Int, auth.id)
                 .input('nombre', sql.NVarChar, nombre || '')

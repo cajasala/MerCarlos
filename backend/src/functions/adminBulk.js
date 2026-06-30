@@ -1,5 +1,5 @@
 const { app } = require('@azure/functions');
-const { poolPromise, sql } = require('../../utils/db');
+const { getPool, sql } = require('../../utils/db');
 const { requireAdmin } = require('../../utils/adminAuth');
 const csv = require('csv-parser');
 const { Readable } = require('stream');
@@ -52,7 +52,7 @@ app.http('uploadProductsCSV', {
             }
 
             const sessionId = crypto.randomUUID();
-            const pool = await poolPromise;
+            const pool = await getPool();
             const transaction = new sql.Transaction(pool);
             context.log("Va a iniciar transaccion");
             await transaction.begin();
