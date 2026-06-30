@@ -81,6 +81,7 @@ app.http('createOrder', {
                 return { status: 201, jsonBody: { orderId } };
             } catch (err) {
                 await transaction.rollback();
+                context.log('Rollback Error:', err.message);
                 throw err;
             }
         } catch (err) {
