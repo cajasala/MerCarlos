@@ -20,7 +20,7 @@ app.http('getOrders', {
                     FROM Orden o 
                     JOIN StatusOrden s ON o.StatusID = s.StatusID 
                     WHERE o.ClienteID = @clienteId 
-                    ORDER BY o.FechaOrden DESC
+                    ORDER BY o.CreatedAt DESC
                 `);
 
             return { status: 200, jsonBody: result.recordset };
