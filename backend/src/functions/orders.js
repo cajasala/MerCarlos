@@ -54,7 +54,7 @@ app.http('createOrder', {
             }
 
             const transaction = new sql.Transaction(pool);
-
+            
             await transaction.begin();
             try {
                 // 1. Create Order
@@ -65,8 +65,8 @@ app.http('createOrder', {
                     .input('statusId', sql.Int, defaultStatusId)
                     .query('INSERT INTO Orden (ClienteID, TiendaID, Total, StatusID) OUTPUT INSERTED.OrdenID VALUES (@clienteId, @tiendaId, @total, @statusId)');
                 
-                const orderId = orderResult.recordset[0].OrdenID;
-
+                    const orderId = orderResult.recordset[0].OrdenID;
+                
                 // 2. Add Detail items
                 for (const item of items) {
                     await transaction.request()
@@ -78,7 +78,7 @@ app.http('createOrder', {
                 }
 
                 await transaction.commit();
-                return { status: 201, jsonBody: { ordenId } };
+                return { status: 201, jsonBody: { orderId } };
             } catch (err) {
                 await transaction.rollback();
                 throw err;
